@@ -1,0 +1,19 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Área do cliente | Sant'Anna 360</title><style>:root{--navy:#14283e;--gold:#b38a47}*{box-sizing:border-box}body{margin:0;font:16px 'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#243448}header{background:var(--navy);color:white;padding:20px 6%}header strong{font-size:24px}header small{display:block;color:#e7cc96;margin-top:5px}main{max-width:460px;margin:9vh auto;padding:0 18px}.card{background:white;border:1px solid #dfe5eb;border-radius:15px;padding:30px;box-shadow:0 8px 28px #14283e0b}h1{font-size:26px;margin:0 0 8px}p{color:#637386;line-height:1.5}label{display:block;margin:17px 0 6px;font-weight:600}input{width:100%;padding:12px;border:1px solid #cdd6df;border-radius:8px;font:inherit}button{background:var(--navy);color:white;border:0;border-radius:8px;padding:13px 18px;font:inherit;cursor:pointer;width:100%;margin-top:20px}button:disabled{opacity:.6;cursor:wait}a{color:var(--navy)}.msg{margin-top:15px;white-space:pre-wrap}.error{color:#a23c30}.ok{color:#236a43}.note{font-size:13px;margin-top:20px}</style></head><body><header><strong>SANT'ANNA 360°</strong><small>Gestão inteligente • Pessoas, processos e resultados</small></header><main><div class="card"><h1>Área restrita</h1><p>Entre com sua conta autorizada para acessar os serviços da Sant'Anna 360.</p><form id="login"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required><label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required><button id="submit" type="submit">Entrar</button></form><div class="msg" id="message" role="status" aria-live="polite"></div><p class="note"><a href="index.html">Voltar ao site</a></p></div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
+// CONFIGURAÇÃO PENDENTE: substitua apenas pela URL pública e chave publicável/anon do seu projeto.
+// NUNCA coloque service_role, secret key ou senha do banco em arquivos públicos.
+const SUPABASE_URL='COLOQUE_A_URL_DO_PROJETO';
+const SUPABASE_PUBLIC_KEY='COLOQUE_A_CHAVE_PUBLICAVEL';
+const msg=document.getElementById('message');
+const form=document.getElementById('login');
+if(!SUPABASE_URL.startsWith('https://') || SUPABASE_PUBLIC_KEY.startsWith('COLOQUE_')){msg.className='msg error';msg.textContent='Configuração pendente: falta conectar esta página ao Supabase.';document.getElementById('submit').disabled=true;}
+else {
+ const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY);
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();const button=document.getElementById('submit');button.disabled=true;msg.textContent='Autenticando...';msg.className='msg';
+  try{const {data,error}=await client.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw error;
+   const {data:profile,error:profileError}=await client.from('perfis').select('ativo,administrador,nome').eq('id',data.user.id).single();if(profileError||!profile?.ativo){await client.auth.signOut();throw new Error('Conta sem perfil ativo autorizado.');}
+   msg.className='msg ok';msg.textContent='Autenticação concluída. A integração do painel de gestão ainda está pendente; nenhum módulo foi liberado.';
+  }catch(err){msg.className='msg error';msg.textContent='Não foi possível entrar: '+(err.message||'verifique seus dados');}finally{button.disabled=false;}
+ });
+}
+</script></body></html>
