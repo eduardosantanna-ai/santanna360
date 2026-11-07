@@ -383,17 +383,12 @@ const togglePassword = document.getElementById('togglePassword');
             return;
           }
 
-          // O painel ainda não foi integrado.
-          // Não liberamos dados ou módulos sem conferir
-          // permissões por empresa e políticas RLS.
+          if (!perfil.administrador) {
           await client.auth.signOut();
-
-          showMessage(
-            'Credenciais verificadas! O painel de gestão ainda está em implantação.',
-            'success'
-          );
-
-        } catch (error) {
+          showMessage('Painel do cliente em implantação.', 'info');
+            return;
+}
+         window.location.assign('painel.html');
           showMessage(
             'Ocorreu uma falha de comunicação. Tente novamente.',
             'error'
