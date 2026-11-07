@@ -19,7 +19,90 @@ function addCompany(e){e.preventDefault();let name=document.getElementById('cnam
 function choose(id){active=id;save();view('dashboard')}function renameCompany(id){let c=db.companies.find(x=>x.id===id),v=prompt('Nome da empresa',c.name);if(v&&v.trim()){c.name=v.trim();save();empresas()}}
 function dashboard(){if(!must())return;let ans=db.diagnostics[active]||{},h=Object.keys(db.hr[active]||{}).length,plans=db.plans.filter(x=>x.company===active);document.getElementById('main').innerHTML=topoPainel('Painel da empresa','Visão consolidada da consultoria')+`<div class="cards"><div class="card"><div class="muted">Itens diagnosticados</div><div class="kpi">${Object.keys(ans).length}/48</div></div><div class="card"><div class="muted">Matrizes SWOT</div><div class="kpi">${db.swots.filter(x=>x.company===active).length}</div></div><div class="card"><div class="muted">Planos 5W2H</div><div class="kpi">${plans.length}</div></div><div class="card"><div class="muted">Competências RH/DP</div><div class="kpi">${h}</div></div></div><h3>Áreas do diagnóstico</h3><div class="cards">${AREAS.map(a=>{let qs=QUESTIONS.filter(q=>q.area===a),n=qs.filter(q=>ans[q.id]?.answer).length;return `<div class="card"><strong>${esc(a)}</strong><p>${n} de 8 respondidas</p><div class="progress"><span style="width:${n/8*100}%"></span></div></div>`}).join('')}</div><div class="actions"><button class="primary" onclick="view('diagnostico')">Iniciar diagnóstico</button><button onclick="view('rh')">Lançar RH/DP</button></div>`}
 function getAnswer(id){return db.diagnostics[active]?.[id]||{}}
-function diagnostico(){if(!must())return;let qs=QUESTIONS.filter(q=>q.area===area);document.getElementById('main').innerHTML=topoPainel('Diagnóstico Organizacional 360°','48 perguntas • 6 módulos • relatório analítico com pelo menos um parágrafo por item')+`<label>Área de avaliação</label><select id="area" onchange="area=this.value;diagnostico()">${AREAS.map(a=>`<option ${a===area?'selected':''}>${esc(a)}</option>`).join('')}</select><div class="notice">Cada resposta fica vinculada à empresa ativa. As análises SWOT e os planos 5W2H são associados ao item correspondente.</div>${qs.map(q=>{let x=getAnswer(q.id);return `<details><summary>${esc(q.text)} <span class="tag">${esc(x.answer||'Pendente')}</span></summary><label>Resposta</label><select id="ans-${q.id}"><option value="">Selecione</option>${['Sim','Parcialmente','Não','Não se aplica'].map(v=>`<option ${x.answer===v?'selected':''}>${v}</option>`).join('')}</select><label>Evidências / observações</label><textarea id="obs-${q.id}">${esc(x.notes||'')}</textarea><div class="actions"><button class="primary" onclick="saveAnswer('${q.id}')">Salvar resposta</button><button onclick="editSwot('${q.id}')">Matriz SWOT</button><button onclick="editPlan('${q.id}','diagnostico')">Plano 5W2H</button></div>${x.answer?`<div class="report"><label for="analise-${q.id}">Análise técnica do item — editável</label><textarea id="analise-${q.id}" rows="7" style="min-height:170px">${esc(x.customAnalysis ?? diagnosticText(q,x))}</textarea><div class="actions"><button class="primary" onclick="saveAnalysis('${q.id}')">Salvar análise</button><button onclick="resetAnalysis('${q.id}')">Restaurar texto sugerido</button></div><p class="small muted">A análise editada será utilizada no relatório 360° e nos documentos impressos. Salve a resposta antes de editar a análise.</p></div>`:''}</details>`}).join('')}`}
+
+function diagnostico() {
+  if (!must()) return;
+
+  let qs = QUESTIONS.filter(q => q.area === area);
+
+  document.getElementById('main').innerHTML =
+    topoPainel(
+      'Diagnóstico Organizacional 360°',
+      '48 perguntas • 6 módulos • análise técnica editável'
+    ) +
+
+    `<label>Área de avaliação</label>
+    <select id="area" onchange="area=this.value;diagnostico()">
+      ${AREAS.map(a =>
+        `<option ${a === area ? 'selected' : ''}>${esc(a)}</option>`
+      ).join('')}
+    </select>
+
+    <div class="notice">
+      Cada resposta fica vinculada à empresa ativa.
+      As análises técnicas podem ser complementadas e editadas.
+    </div>`
+
+    + qs.map(q => {
+      let x = getAnswer(q.id);
+
+      return `
+      <details>
+        <summary>
+          ${esc(q.text)}
+          <span class="tag">${esc(x.answer || 'Pendente')}</span>
+        </summary>
+
+        <label>Resposta</label>
+        <select id="ans-${q.id}">
+          <option value="">Selecione</option>
+          ${['Sim', 'Parcialmente', 'Não', 'Não se aplica']
+            .map(v => `<option ${x.answer === v ? 'selected' : ''}>${v}</option>`)
+            .join('')}
+        </select>
+
+        <label>Evidências / observações</label>
+        <textarea id="obs-${q.id}">${esc(x.notes || '')}</textarea>
+
+        <div class="actions">
+          <button class="primary" onclick="saveAnswer('${q.id}')">
+            Salvar resposta
+          </button>
+          <button onclick="editSwot('${q.id}')">
+            Matriz SWOT
+          </button>
+          <button onclick="editPlan('${q.id}','diagnostico')">
+            Plano 5W2H
+          </button>
+        </div>
+
+        ${x.answer ? `
+          <div class="report">
+            <label for="analysis-${q.id}">
+              Análise técnica do item — editável
+            </label>
+
+            <textarea
+              id="analysis-${q.id}"
+              rows="8"
+              style="width:100%;min-height:180px"
+            >${esc(x.analysis ?? diagnosticText(q, x))}</textarea>
+
+            <div class="actions">
+              <button class="primary"
+                onclick="saveAnalysis('${q.id}')">
+                Salvar análise
+              </button>
+
+              <button onclick="restoreAnalysis('${q.id}')">
+                Restaurar texto sugerido
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      </details>`;
+    }).join('');
+}
 function saveAnswer(id){
   const answer=document.getElementById('ans-'+id).value;
   const notes=document.getElementById('obs-'+id).value;
