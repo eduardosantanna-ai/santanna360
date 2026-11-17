@@ -1,4 +1,4 @@
-/* MAP 360°: relatório analítico demonstrativo v1.6.3.
+/* MAP 360°: relatório analítico demonstrativo v1.6.4.
  * Somente dados locais da avaliação, sem requisições de rede.
  */
 (function(global){
@@ -41,7 +41,7 @@ function append(container,data){
  const scores=Object.fromEntries(calculo.dimensoes.map(d=>[d.nome,d.indice]));
  const selected=leaders.map(d=>d.name).join(' + ');
  container.replaceChildren();
- container.append(elt('div','map-analytic-kicker','SANT’ANNA 360  /  MAP 360°  /  RELATÓRIO ANALÍTICO V1.6.3'));
+ container.append(elt('div','map-analytic-kicker','SANT’ANNA 360  /  MAP 360°  /  RELATÓRIO ANALÍTICO V1.6.4'));
  let sec=section(container,'1. Apresentação e objetivos','Análise técnica descritiva para reflexão sobre preferências de trabalho, com base nas 32 afirmações do MAP 360°.');
  para(sec,'Este relatório organiza as respostas nas dimensões Constância, Ação, Estrutura e Conexão. Nenhuma pontuação representa capacidade comprovada, adequação a cargo, percentil ou previsão de desempenho. Os exemplos e orientações são hipóteses de desenvolvimento e exigem contextualização com a experiência da pessoa.');
  para(sec,'A avaliação foi concluída no navegador e não é transmitida automaticamente a servidores. O relatório pode ser impresso ou salvo localmente. Recomenda-se preservar a privacidade dos resultados.');
@@ -97,7 +97,7 @@ function append(container,data){
  sec=section(container,'10. Critérios técnicos e limites','Documentação do funcionamento experimental.');
  para(sec,'O MAP 360° possui 32 afirmações, oito em cada dimensão. As respostas vão de 1 a 5 e os itens terminados em 07 ou 08 usam pontuação reversa (6 menos a nota). A soma por dimensão varia de 8 a 40 e é convertida pela fórmula (soma − 8) × 100 / 32.');
  para(sec,'A classificação usa provisoriamente a proximidade de até 6,25 pontos do maior índice. Esta regra não tem validade normativa demonstrada. Os resultados não são percentis e não comprovam desempenho, inteligência, saúde mental, aptidão ou probabilidade de sucesso.');
- para(sec,'Versão: MAP 360° v1.6.3 demonstrativa. Documento emitido automaticamente, sem revisão de especialista individual e sem validação científica concluída.');
+ para(sec,'Versão: MAP 360° v1.6.4 demonstrativa. Documento emitido automaticamente, sem revisão de especialista individual e sem validação científica concluída.');
  container.append(elt('p','map-analytic-footer','Sant’Anna 360 · MAP 360° · Documento experimental · Uso para desenvolvimento e demonstração'));
 }
 global.MAP360Analitico={render:append};
