@@ -1,0 +1,20 @@
+name: MAP 360 - relatório 1.5
+on:
+  pull_request:
+    paths:
+      - 'map360-demo.html'
+      - 'js/map360-motor-v1_3.js'
+      - 'tests/map360-relatorio-v1_5.test.js'
+      - '.github/workflows/map360-relatorio-v1_5.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/map360-relatorio-v1_5.test.js
