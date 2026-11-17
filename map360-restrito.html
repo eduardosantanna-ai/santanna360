@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>MAP 360° | Área restrita — Sant’Anna 360</title>
+<style>
+:root{--navy:#152d40;--gold:#b68b49;--border:#dce3e8;--bg:#f4f6f7;--ink:#172638}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI",Arial,sans-serif}body:not(.ready) main{visibility:hidden}
+header{background:var(--navy);padding:19px max(20px,calc((100vw - 1000px)/2));color:white;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header small{display:block;color:#e9ce9c}header a{color:#e9ce9c}
+main{max-width:1000px;margin:25px auto;padding:0 18px 50px}
+.card{background:white;padding:22px;border:1px solid var(--border);border-radius:12px;margin-bottom:16px}
+h1{margin:0;font-size:27px}h2{font-size:21px}h3{font-size:18px}
+.alert{background:#fff4df;padding:13px 15px;border-radius:8px}.error{background:#ffe7e4;color:#8a2424}.ok{background:#e4f6ea;color:#175536}
+label{display:block;font-weight:600;margin-bottom:6px}select{padding:11px;border:1px solid #bfcbd5;border-radius:9px;max-width:100%;width:480px;font:inherit}
+button{background:var(--navy);color:white;border:0;border-radius:8px;padding:9px 15px;font:inherit;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--border);text-align:left;padding:10px;font-size:14px}
+.scroll{overflow:auto}.hidden{display:none!important}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.map-analytic-section{background:white;padding:24px 26px;margin:0 0 16px;border:1px solid #dce3e8;border-radius:10px}
+.map-analytic-section h2{color:#152d40;font-size:20px}
+.map-analytic-section p{line-height:1.65}
+.map-analytic-kicker,.map-analytic-footer{color:#6d7280;font-size:12px}
+.map-analytic-score{margin:15px 0}.map-analytic-track{height:12px;border-radius:12px;background:#e5eaf0;overflow:hidden;margin-top:7px}
+.map-analytic-fill{height:100%;border-radius:12px}.map-analytic-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.map-analytic-table th,.map-analytic-table td{padding:10px;border:1px solid #dde4eb;vertical-align:top}
+.map-analytic-table th{background:#edf2f6}
+#report p,#report li,#report td{text-align:justify;text-justify:inter-word;hyphens:auto;overflow-wrap:break-word}
+@media print{
+ @page{size:A4;margin:16mm 14mm}
+ header,.no-print,#summary{display:none!important}
+ body{background:white}main{max-width:none;margin:0;padding:0}
+ #report{display:block!important}
+ .map-analytic-section{break-before:page;page-break-before:always;break-inside:auto;border:0;padding:0;margin:0}
+ .map-analytic-section:first-of-type{break-before:auto;page-break-before:auto}
+ .map-analytic-section h2{break-after:avoid;page-break-after:avoid}
+ .map-analytic-table tr,.map-analytic-score{break-inside:avoid;page-break-inside:avoid}
+ #report p,#report li,#report td{orphans:3;widows:3;text-align:justify}
+}
+</style></head><body>
+<header><div><strong>SANT’ANNA 360 | MAP 360°</strong><small>Área restrita · Consulta de avaliações</small></div><nav><a href="painel.html">Painel</a> &nbsp; <a href="login.html">Login</a></nav></header>
+<main>
+<section class="card no-print">
+<h1>MAP 360° — Avaliações por empresa</h1>
+<p class="alert"><strong>Versão de homologação somente leitura e exclusiva para administrador.</strong> Não cria avaliações, não envia convites e não altera respostas. O relatório só é gerado quando há exatamente 32 respostas válidas na avaliação e empresa selecionadas.</p>
+<p id="status" class="alert" role="status" aria-live="polite">Verificando sua sessão...</p>
+<div id="app" class="hidden">
+<label for="empresa">Empresa acessível</label><select id="empresa"></select>
+<p id="totals"></p>
+<div class="scroll"><table><thead><tr><th>Avaliação</th><th>Participante</th><th>Finalidade</th><th>Criada em</th><th>Ação</th></tr></thead><tbody id="avaliacoes"></tbody></table></div>
+</div>
+<div class="actions"><button id="refresh" type="button">Atualizar</button><button id="logout" type="button">Sair</button></div>
+</section>
+<section id="summary" class="card hidden"><h2>Resultado consultado</h2><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button></section>
+<div id="report" class="hidden"></div>
+<p class="no-print" style="font-size:12px;color:#627387">Este módulo depende de autenticação Supabase e das políticas RLS já existentes. A página HTML não é uma barreira de acesso; os dados devem permanecer protegidos no banco.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/map360-motor-v1_3.js"></script>
+<script src="js/map360-relatorio-analitico-v1_6.js"></script>
+<script>
+'use strict';
+const byId=id=>document.getElementById(id);
+const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
+let user=null,companies=[],evaluations=[],questions=[],activeId=null;
+function status(s,kind=''){const p=byId('status');p.textContent=s;p.className='alert '+kind;}
+function clear(n){n.replaceChildren();}
+function cell(value){const e=document.createElement('td');e.textContent=value===null||value===undefined?'—':String(value);return e;}
+function validUuid(s){return typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);}
+async function init(){
+ byId('app').classList.add('hidden');byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ if(!client||!window.MAP360Motor||!window.MAP360Analitico){document.body.classList.add('ready');status('Falha ao carregar componentes do sistema.','error');return;}
+ try{
+  const {data,error}=await client.auth.getUser();
+  if(error||!data.user){location.replace('login.html');return;}
+  user=data.user;
+  // Publicação provisória: SOMENTE administrador ativo. Acesso de clientes só após testes RLS multiempresa.
+  const {data:perfil,error:perfilError}=await client.from('perfis').select('ativo,administrador').eq('id',user.id).maybeSingle();
+  if(perfilError||!perfil?.ativo||!perfil?.administrador){document.body.classList.add('ready');status('Módulo de consulta em homologação: acesso temporariamente exclusivo ao administrador.','error');return;}
+  // Os dados só são visíveis caso as políticas RLS do Supabase autorizem a sessão.
+  const e=await client.from('empresas').select('id,razao_social,nome_fantasia').order('razao_social').limit(100);
+  if(e.error)throw e.error;
+  companies=e.data||[];
+  clear(byId('empresa'));
+  for(const row of companies){const opt=document.createElement('option');opt.value=row.id;opt.textContent=row.nome_fantasia||row.razao_social||'Empresa';byId('empresa').append(opt);}
+  document.body.classList.add('ready');
+  if(!companies.length){status('Seu usuário não possui empresa visível. Solicite a conferência dos vínculos de acesso.','error');return;}
+  const q=await client.from('map_perguntas').select('id,codigo,dimensao,ativa').eq('ativa',true).limit(100);
+  if(q.error)throw q.error;
+  questions=q.data||[];
+  const dims={C:'constancia',A:'acao',E:'estrutura',X:'conexao'};
+  const codes=new Set();
+  for(const p of questions){
+    if(!/^[CAEX]0[1-8]$/.test(p.codigo)||dims[p.codigo[0]]!==p.dimensao||codes.has(p.codigo)||!validUuid(p.id))
+      throw Error('Questões do MAP 360° estão incompletas ou inconsistentes.');
+    codes.add(p.codigo);
+  }
+  if(questions.length!==32||codes.size!==32)throw Error('É necessário haver exatamente 32 perguntas ativas.');
+  byId('app').classList.remove('hidden');
+  await loadCompany();
+ }catch(e){document.body.classList.add('ready');status('Consulta indisponível: '+e.message,'error');}
+}
+async function loadCompany(){
+ const id=byId('empresa').value;
+ byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ if(!companies.some(c=>c.id===id)){status('Empresa não autorizada.','error');return;}
+ activeId=id;status('Buscando avaliações autorizadas...');
+ const {data,error}=await client.from('map_avaliacoes')
+   .select('id,empresa_id,colaborador_id,participante_nome,finalidade,consentimento_registrado,criado_em')
+   .eq('empresa_id',id).order('criado_em',{ascending:false}).limit(100);
+ if(error){status('Erro ao consultar avaliações: '+error.message,'error');return;}
+ evaluations=data||[];
+ clear(byId('avaliacoes'));byId('totals').textContent='Avaliações visíveis: '+evaluations.length+' (limite da listagem: 100).';
+ for(const ev of evaluations){
+  const tr=document.createElement('tr');
+  tr.append(cell(ev.id.slice(0,8)),cell(ev.participante_nome||'Não informado'),cell(ev.finalidade),cell(new Date(ev.criado_em).toLocaleDateString('pt-BR')));
+  const td=document.createElement('td');
+  const button=document.createElement('button');button.type='button';button.textContent='Consultar';
+  button.onclick=()=>loadResult(ev.id,id);td.append(button);tr.append(td);byId('avaliacoes').append(tr);
+ }
+ status('Avaliações carregadas em modo de consulta.','ok');
+}
+async function loadResult(assessmentId,companyId){
+ if(companyId!==activeId||!validUuid(assessmentId)||!validUuid(companyId))return;
+ const selected=evaluations.find(e=>e.id===assessmentId&&e.empresa_id===companyId);
+ if(!selected){status('Avaliação não autorizada.','error');return;}
+ if(!selected.consentimento_registrado){status('Avaliação sem registro de consentimento nesta tabela. Relatório não exibido nesta etapa.','error');return;}
+ byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ status('Conferindo respostas da avaliação...');
+ try{
+  const {data,error}=await client.from('map_respostas').select('avaliacao_id,empresa_id,pergunta_id,nota')
+      .eq('empresa_id',companyId).eq('avaliacao_id',assessmentId).limit(100);
+  if(error)throw error;
+  if(companyId!==activeId)return; // Ignora respostas de outra seleção após troca rápida de empresa.
+  const rows=data||[];
+  const lookup=new Map(questions.map(q=>[q.id,q.codigo]));
+  const respostas={};
+  for(const r of rows){
+    const code=lookup.get(r.pergunta_id);
+    if(!code||r.avaliacao_id!==assessmentId||r.empresa_id!==companyId||!Number.isInteger(r.nota)||r.nota<1||r.nota>5||Object.hasOwn(respostas,code))
+      throw Error('Respostas incompletas ou inconsistentes. Consulte o administrador.');
+    respostas[code]=r.nota;
+  }
+  if(rows.length!==32||Object.keys(respostas).length!==32){
+    status('Avaliação ainda não possui 32 respostas válidas. Relatório indisponível nesta etapa.','error');return;
+  }
+  const resultado=window.MAP360Motor.calcular(respostas);
+  window.MAP360Analitico.render(byId('report'),{calculo:resultado,respostas});
+  byId('resultTitle').textContent=resultado.titulo;
+  byId('resultExplain').textContent='Relatório experimental recuperado de uma avaliação autorizada. O resultado não foi salvo novamente e não representa diagnóstico psicológico ou critério automático para decisões seletivas.';
+  byId('summary').classList.remove('hidden');byId('report').classList.remove('hidden');
+  status('Relatório consultado com sucesso. Nenhum dado foi alterado.','ok');
+ }catch(e){status('Não foi possível gerar o relatório: '+e.message,'error');}
+}
+byId('empresa').addEventListener('change',loadCompany);
+byId('refresh').addEventListener('click',init);
+byId('print').addEventListener('click',()=>window.print());
+byId('logout').addEventListener('click',async()=>{if(client)await client.auth.signOut();location.replace('login.html');});
+init();
+</script></body></html>
