@@ -30,8 +30,10 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;
 <label>Nome do participante (usar dados de teste)<input id="nome" placeholder="Participante Teste" maxlength="80" required autocomplete="off"></label>
 <label>Finalidade da avaliação<select id="finalidade" required><option value="desenvolvimento">Desenvolvimento profissional</option><option value="autoconhecimento">Autoconhecimento</option><option value="formacao">Ação formativa</option></select></label>
 <label>Prazo pretendido para resposta<input id="prazo" type="date" required></label>
-<label>Canal preferido para eventual envio<select id="canal"><option value="email">Email individual</option><option value="whatsapp">WhatsApp individual</option></select></label>
-<p class="small">Não solicite telefone ou email nesta simulação. O convite real dependerá de endpoint protegido e política de privacidade revisada.</p>
+<label>Canal preferido para eventual envio<select id="canal"><option value="email">E-mail individual</option><option value="whatsapp">WhatsApp individual</option></select></label>
+<label id="emailField">E-mail do participante (usar contato de teste)<input id="email" type="email" placeholder="teste@exemplo.com" maxlength="254" autocomplete="off" inputmode="email"></label>
+<label id="phoneField" class="hidden">WhatsApp do participante (usar número de teste com DDD)<input id="phone" type="tel" placeholder="(27) 99999-9999" maxlength="20" autocomplete="off" inputmode="tel"></label>
+<p class="small">O contato será usado apenas para validar a prévia nesta página, sem gravação ou envio. Não insira dados pessoais reais nesta etapa. O link individual depende da implantação de um serviço protegido.</p>
 <div class="actions"><button type="submit">Preparar prévia do convite</button><button type="reset" class="secondary">Limpar campos</button></div>
 </form>
 </section>
@@ -59,6 +61,8 @@ const el=id=>document.getElementById(id);
 const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
 let companies=[];
 let textDraft='';
+function refreshContact(){const email=el('canal').value==='email';el('emailField').classList.toggle('hidden',!email);el('phoneField').classList.toggle('hidden',email);el('email').required=email;el('phone').required=!email;el('email').disabled=!email;el('phone').disabled=email;}
+el('canal').addEventListener('change',()=>{refreshContact();el('preview').classList.add('hidden');});
 function status(message,error=false){el('status').textContent=message;el('status').className='status'+(error?' error':' ok');}
 function validDate(x){if(!/^\d{4}-\d{2}-\d{2}$/.test(x))return false;const d=new Date(x+'T00:00:00');return !Number.isNaN(d.valueOf())&&d.toISOString().slice(0,10)===x;}
 async function init(){
@@ -82,15 +86,19 @@ el('draftForm').addEventListener('submit',event=>{
  event.preventDefault();el('preview').classList.add('hidden');
  const id=el('empresa').value,company=companies.find(x=>x.id===id);
  const name=el('nome').value.trim(),end=el('prazo').value,finalidade=el('finalidade').selectedOptions[0]?.textContent;
+ const channel=el('canal').value,contact=channel==='email'?el('email').value.trim():el('phone').value.trim();
+ if(channel==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)){status('Informe um endereço de e-mail de teste válido.',true);return;}
+ if(channel==='whatsapp'&&!/^\d{10,11}$/.test(contact.replace(/\D/g,''))){status('Informe um WhatsApp de teste com DDD (10 ou 11 dígitos).',true);return;}
  if(!company||!name||!validDate(end)||name.length>80){status('Confira empresa, participante e data. Nenhum convite foi criado.',true);return;}
  if(end<new Date().toISOString().slice(0,10)){status('A validade do convite não pode estar no passado.',true);return;}
  const companyName=company.nome_fantasia||company.razao_social||'Empresa';
  textDraft='PRÉVIA DE CONVITE — MODO DE TESTE\n\nOlá, '+name+'!\n\n'+companyName+' está preparando um convite para o MAP 360° da Sant’Anna 360, um instrumento experimental de preferências comportamentais com 32 afirmações.\nFinalidade: '+finalidade+'.\nPrazo previsto: '+end.split('-').reverse().join('/')+'.\n\nAntes de responder, consulte o aviso de privacidade e a finalidade específica do tratamento.\n\n[LINK INDIVIDUAL AINDA NÃO IMPLEMENTADO]\n\nEsta mensagem é somente uma simulação e não foi enviada.';
- el('previewText').textContent=textDraft;el('preview').classList.remove('hidden');
+ el('previewText').textContent='Canal selecionado: '+(channel==='email'?'E-mail':'WhatsApp')+'\nContato informado (não enviado): '+contact+'\n\n'+textDraft;el('preview').classList.remove('hidden');
  status('Prévia do convite preparada. Nenhuma informação foi enviada ou registrada.');
 });
 el('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(textDraft);status('Texto da prévia copiado. O envio real ainda não está habilitado.');}catch{status('Cópia indisponível neste navegador.',true);}});
 el('hide').addEventListener('click',()=>{textDraft='';el('previewText').textContent='';el('preview').classList.add('hidden');});
-el('draftForm').addEventListener('reset',()=>{textDraft='';el('previewText').textContent='';el('preview').classList.add('hidden');});
+el('draftForm').addEventListener('reset',()=>{textDraft='';el('previewText').textContent='';el('preview').classList.add('hidden');el('canal').value='email';refreshContact();});
+refreshContact();
 init();
 </script></body></html>
