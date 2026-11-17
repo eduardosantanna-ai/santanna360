@@ -1,0 +1,10 @@
+const fs=require('node:fs'),assert=require('node:assert/strict'),vm=require('node:vm');
+const html=fs.readFileSync('map360-convites-homologacao.html','utf8');
+const js=html.match(/<script>([\s\S]*?)<\/script>/);
+assert.ok(js,'script inline ausente'); new vm.Script(js[1]);
+for(const x of ['client.auth.getUser()',"from('perfis')","from('empresas')",'administrador','PRÉVIA FICTÍCIA','LINK INDIVIDUAL AINDA NÃO IMPLEMENTADO','não foi enviada','event.preventDefault()','navigator.clipboard.writeText'])assert.ok(html.includes(x),'Ausente: '+x);
+for(const id of ['draftForm','empresa','nome','prazo','finalidade','canal','preview','previewText','status','copy'])assert.ok(html.includes('id="'+id+'"'),'ID ausente: '+id);
+assert.ok(!/\.(insert|update|upsert|delete|rpc|functions\.invoke)\s*\(/.test(html),'Operação de escrita ou chamada remota');
+assert.ok(!/service_role|secret_key|localStorage|sessionStorage/.test(html),'Risco de segredo ou armazenamento');
+assert.ok(!/mailto:|api\.whatsapp\.com|wa\.me/.test(html),'Links de envio não devem constar');
+console.log('MAP360 v1.8: verificação estática aprovada, sem operações de envio ou gravação.');
