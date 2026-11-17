@@ -23,7 +23,7 @@ create table if not exists public.map360_participantes (
   nome text not null check (length(trim(nome)) between 2 and 180),
   email text,
   cargo text,
-  consentimento_registrado boolean not null default false,
+  consentimento_registrado boolean not null default false check (consentimento_registrado = false),
   criado_em timestamptz not null default now(),
   criado_por uuid references auth.users(id)
 );
@@ -39,8 +39,9 @@ create table if not exists public.map360_avaliacoes (
   pontuacoes jsonb,
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
-  constraint map360_respostas_array check (respostas is null or jsonb_typeof(respostas)='object'),
-  constraint map360_pontuacoes_obj check (pontuacoes is null or jsonb_typeof(pontuacoes)='object')
+  -- Nesta fase não armazenar respostas individuais nem interpretações.
+  constraint map360_piloto_sem_respostas check (respostas is null and pontuacoes is null),
+  constraint map360_piloto_somente_rascunho check (status in ('rascunho','cancelada'))
 );
 create index if not exists map360_avaliacoes_empresa_idx on public.map360_avaliacoes(empresa_id);
 
@@ -95,6 +96,14 @@ drop policy if exists map360_avaliacoes_editar on public.map360_avaliacoes;
 create policy map360_avaliacoes_editar on public.map360_avaliacoes
 for update to authenticated using (public.map360_tem_acesso(empresa_id,true))
 with check (public.map360_tem_acesso(empresa_id,true));
+
+-- Endurecimento: a API não deve dar acesso de escrita em empresas, vínculos ou função de autorização.
+-- Cadastros iniciais feitos apenas por operador autorizado, no SQL Editor, com IDs conferidos.
+revoke insert, update, delete on public.map360_empresas from anon, authenticated;
+revoke insert, update, delete on public.map360_acessos from anon, authenticated;
+revoke all on public.map360_empresas, public.map360_acessos, public.map360_participantes, public.map360_avaliacoes from anon;
+grant select on public.map360_empresas, public.map360_acessos to authenticated;
+grant select, insert, update on public.map360_participantes, public.map360_avaliacoes to authenticated;
 
 -- Bootstrap, usando SOMENTE o painel SQL do Supabase após consultar IDs reais:
 -- insert into public.map360_empresas(nome) values ('EMPRESA DE TESTE') returning id;
