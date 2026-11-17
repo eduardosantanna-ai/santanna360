@@ -1,0 +1,34 @@
+name: MAP360 teste de impressao v1.6.2
+on:
+  pull_request:
+    paths:
+      - 'map360-demo.html'
+      - 'tests/map360-impressao-v1_6_2.js'
+      - '.github/workflows/map360-impressao-v1_6_2.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - run: node tests/map360-impressao-v1_6_2.js
+      - run: |
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+          for p in visual-review/*.pdf; do
+            echo "$p: $(pdfinfo "$p" | awk '/Pages:/ {print $2}') páginas"
+            pdftotext "$p" - | grep -F 'Mapa de Preferências Comportamentais' >/dev/null || pdftotext "$p" - | grep -F 'Apresentação e objetivos' >/dev/null
+          done
+          pdftotext visual-review/analitico.pdf - | grep -F 'Plano de Desenvolvimento Individual'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: map360-impressao-162
+          path: visual-review/
