@@ -1,135 +1,91 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>MAP 360° | Administração — Sant'Anna 360</title>
+<title>MAP 360° | Administração piloto — Sant'Anna 360</title>
 <style>
 :root{--navy:#14283e;--gold:#b38a47;--bg:#f5f7fa;--line:#dce3ea;--ink:#263748}
-*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
-header{background:var(--navy);color:#fff;padding:20px max(20px,calc((100vw - 1060px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-header small{display:block;color:#e7cc96}header a{color:#f4dba8}
-main{max-width:1060px;margin:28px auto;padding:0 18px 48px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
-h1{font-size:28px;margin:0 0 6px}h2{font-size:19px;margin:0 0 12px}
-p{margin:6px 0 12px}.muted{color:#627489;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-label{font-size:13px;font-weight:650;display:block;margin-bottom:5px}
-input,select{width:100%;padding:11px;border:1px solid #bdcbd7;border-radius:8px;font:inherit}
-button,.btn{font:inherit;padding:10px 16px;border:0;border-radius:8px;background:var(--navy);color:white;cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}.ghost{background:#e9eef4;color:var(--navy)}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}.wrap{overflow-x:auto}
-.notice{padding:11px 14px;border-radius:8px;background:#eef3f8;margin-bottom:18px;font-size:14px}
-.warn{background:#fff3dd}.error{background:#fee6e2;color:#8e241e}.ok{background:#e9f7ef;color:#165c35}
-.hidden{display:none!important}.tag{display:inline-block;border-radius:14px;background:#f3e7cf;color:#715221;font-size:12px;padding:3px 9px}
-@media(max-width:600px){header{padding:18px}h1{font-size:23px}}
-</style>
-</head><body>
-<header><div><strong>SANT’ANNA 360</strong><small>Gestão de Pessoas / MAP 360°</small></div><nav><a href="painel.html">Painel</a> &nbsp; <a href="login.html">Acesso</a></nav></header>
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:20px max(20px,calc((100vw - 1080px)/2));display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+header small{display:block;color:#edce92}header a{color:#edce92}main{max-width:1080px;margin:24px auto;padding:0 16px 45px}
+.card{background:white;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+h1{font-size:26px;margin:0 0 3px}h2{font-size:19px;margin:0 0 12px}
+.muted{font-size:13px;color:#657489}.notice{padding:12px 14px;border-radius:8px;background:#fff0da;margin-bottom:14px}
+.error{background:#fde8e8;color:#8d2424}.ok{background:#e6f6ee;color:#1a6142}
+label{display:block;font-weight:600;font-size:13px;margin:0 0 6px}select{padding:10px;width:100%;max-width:450px;border:1px solid #bdcad7;border-radius:8px;font:inherit}
+button{border:0;border-radius:8px;padding:9px 13px;background:var(--navy);color:white;cursor:pointer}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.stat{border:1px solid var(--line);padding:14px;border-radius:10px}.stat strong{font-size:25px;color:var(--navy);display:block}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid var(--line);padding:9px;text-align:left}.scroll{overflow:auto}
+.hidden{display:none!important}.footer{font-size:12px;color:#66768a}
+</style></head><body>
+<header><div><strong>SANT’ANNA 360</strong><small>MAP 360° / Administração experimental</small></div><nav><a href="painel.html">Painel</a> &nbsp; <a href="login.html">Login</a></nav></header>
 <main>
-<div class="notice warn"><strong>Ambiente piloto.</strong> Módulo de cadastro e avaliações em rascunho. Não coletar respostas reais de candidatos nesta etapa. O acesso exige autenticação e políticas de segurança do Supabase.</div>
-<section class="card">
-<h1>Administração MAP 360°</h1><p class="muted">Constância · Ação · Estrutura · Conexão</p>
-<div id="status" role="status" aria-live="polite" class="notice">Verificando sua sessão...</div>
-<div class="actions"><button id="reload" class="ghost" type="button">Atualizar dados</button><button id="logout" class="ghost" type="button">Sair</button></div>
-</section>
+<div class="notice"><strong>Modo seguro: somente leitura.</strong> Sem novos cadastros ou gravação de respostas. Não utilizar dados reais para teste do instrumento experimental. O código HTML pode ficar visível em GitHub Pages; o acesso aos dados depende de Supabase Auth + RLS.</div>
+<section class="card"><h1>MAP 360° — Visão administrativa</h1><p class="muted">Constância · Ação · Estrutura · Conexão</p><div id="status" role="status" aria-live="polite" class="notice">Verificando sessão...</div><div class="actions"><button type="button" id="refresh">Atualizar</button><button type="button" id="logout">Sair</button></div></section>
 <div id="app" class="hidden">
-<section class="card"><h2>Empresa autorizada</h2><label for="company">Selecione a empresa</label><select id="company"></select><p class="muted" id="role"></p></section>
-<section class="card" id="create"><h2>Cadastro de participante</h2>
-<form id="participantForm">
-<div class="grid">
-<div><label for="participantName">Nome *</label><input id="participantName" autocomplete="off" minlength="2" maxlength="180" required></div>
-<div><label for="participantEmail">E-mail</label><input id="participantEmail" type="email" autocomplete="off"></div>
-<div><label for="participantJob">Cargo</label><input id="participantJob" maxlength="180"></div>
-</div><div class="actions"><button type="submit" id="save">Cadastrar participante</button></div></form>
-<p class="muted">Não envie convites automaticamente. O consentimento e a finalidade da avaliação serão registrados em uma etapa própria.</p></section>
-<section class="card"><h2>Participantes</h2><div class="wrap"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Cargo</th><th>Avaliação</th></tr></thead><tbody id="people"></tbody></table></div></section>
-<section class="card"><h2>Avaliações cadastradas</h2><div class="wrap"><table><thead><tr><th>Participante</th><th>Versão</th><th>Status</th><th>Data</th></tr></thead><tbody id="assessments"></tbody></table></div></section>
-<section class="card"><h2>Questionário piloto</h2><p class="muted">A aplicação atual é local e não grava respostas no banco. Não utilizar como link de convite individual ou coleta de dados reais.</p><a href="map360-piloto.html">Abrir questionário demonstrativo</a></section>
+<section class="card"><h2>Empresa autorizada</h2><label for="company">Selecione uma empresa</label><select id="company"></select><p class="muted">A lista vem da tabela existente <code>public.empresas</code> e das políticas de acesso atuais.</p></section>
+<section class="card"><h2>Visão geral</h2><div class="grid"><div class="stat"><strong id="nQuestions">–</strong>Perguntas ativas</div><div class="stat"><strong id="nAssessments">–</strong>Avaliações visíveis da empresa</div><div class="stat"><strong id="nDimensions">–</strong>Dimensões identificadas</div></div></section>
+<section class="card"><h2>Questionário cadastrado</h2><div class="scroll"><table><thead><tr><th>Dimensão</th><th>Questões ativas</th></tr></thead><tbody id="dimensions"></tbody></table></div></section>
+<section class="card"><h2>Avaliações</h2><p class="muted">Somente totais por empresa; sem nomes ou resultados individuais nesta fase.</p><p id="assessmentInfo">Carregando...</p></section>
+<section class="card"><h2>Questionário demonstrativo</h2><p class="muted">A versão HTML local funciona separadamente. Ela não envia respostas nem identifica participantes no Supabase.</p><a href="map360-piloto.html">Abrir piloto MAP 360° v1.2</a></section>
 </div>
+<p class="footer">MAP 360° v1.3-piloto — classificação ilustrativa, não validada para seleção. Nenhuma integração de respostas reais está ativada.</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 'use strict';
-const SUPABASE_URL='https://okvikkifrsbovbppywgp.supabase.co';
-const SUPABASE_PUBLIC_KEY='sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC';
-const $=id=>document.getElementById(id);
-const message=(s,kind='')=>{const n=$('status');n.textContent=s;n.className='notice '+kind;};
-const client=window.supabase?.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY);
-let user=null,companies=[],participants=[],assessments=[];
-function option(v,t){const e=document.createElement('option');e.value=v;e.textContent=t;return e;}
-function cell(text){const e=document.createElement('td');e.textContent=text??'—';return e;}
-function row(...items){const tr=document.createElement('tr');items.forEach(it=>tr.appendChild(cell(it)));return tr;}
-function current(){return companies.find(x=>x.empresa_id===$('company').value);}
-function clear(node){while(node.firstChild)node.removeChild(node.firstChild);}
-async function boot(){
-  $('app').classList.add('hidden');
-  if(!client){message('Falha ao carregar a biblioteca de autenticação.','error');return;}
-  try {
-    const auth=await client.auth.getUser();
-    if(auth.error||!auth.data.user){location.replace('login.html');return;}
-    user=auth.data.user;
-    const {data,error}=await client.from('map360_acessos').select('empresa_id,papel,map360_empresas(nome)').eq('usuario_id',user.id);
-    if(error)throw error;
-    companies=data||[];
-    clear($('company'));
-    for(const c of companies)$('company').appendChild(option(c.empresa_id,c.map360_empresas?.nome||c.empresa_id));
-    if(!companies.length){message('Sem acesso MAP 360° cadastrado. Um administrador deve associar seu usuário a uma empresa.','warn');return;}
-    $('app').classList.remove('hidden');
-    await load();
-  }catch(err){message('Não foi possível carregar o módulo. Confirme se as tabelas MAP 360° já foram criadas e se você possui acesso. Detalhe: '+err.message,'error');}
-}
+// Credenciais PUBLICÁVEIS que já constam do login do site. Nunca usar service_role no navegador.
+const URL='https://okvikkifrsbovbppywgp.supabase.co';
+const PUBLIC_KEY='sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC';
+const el=id=>document.getElementById(id);
+const client=window.supabase?.createClient(URL,PUBLIC_KEY);
+let companies=[];
+function status(t,kind=''){el('status').textContent=t;el('status').className='notice '+kind;}
+function clear(n){while(n.firstChild)n.removeChild(n.firstChild);}
 async function load(){
- const c=current();if(!c)return;
- const admin=c.papel==='admin';
- $('role').textContent='Permissão: '+(admin?'Administrador':'Somente leitura');
- $('create').classList.toggle('hidden',!admin);
- try{
-  message('Carregando dados autorizados...');
-  const [p,a]=await Promise.all([
-    client.from('map360_participantes').select('id,nome,email,cargo,criado_em').eq('empresa_id',c.empresa_id).order('criado_em',{ascending:false}).limit(200),
-    client.from('map360_avaliacoes').select('id,participante_id,versao_instrumento,status,criado_em').eq('empresa_id',c.empresa_id).order('criado_em',{ascending:false}).limit(200)
-  ]);
-  if(p.error)throw p.error;if(a.error)throw a.error;
-  participants=p.data||[];assessments=a.data||[];
-  const pt=$('people'),at=$('assessments');clear(pt);clear(at);
-  for(const person of participants){
-    const tr=row(person.nome,person.email,person.cargo);
-    const td=document.createElement('td');
-    if(admin){const btn=document.createElement('button');btn.textContent='Criar rascunho';btn.className='ghost';btn.type='button';btn.onclick=()=>createDraft(person.id);td.appendChild(btn)}
-    else td.textContent='Somente leitura';
-    tr.appendChild(td);pt.appendChild(tr);
-  }
-  if(!participants.length)pt.appendChild(row('Nenhum participante cadastrado.','','',''));
-  for(const e of assessments){const person=participants.find(p=>p.id===e.participante_id);at.appendChild(row(person?.nome||'Participante',e.versao_instrumento,e.status,new Date(e.criado_em).toLocaleDateString('pt-BR')))}
-  if(!assessments.length)at.appendChild(row('Nenhuma avaliação.','','',''));
-  message('Dados carregados. '+participants.length+' participante(s) e '+assessments.length+' avaliação(ões).','ok');
- }catch(err){message('Falha ao consultar dados autorizados: '+err.message,'error');}
+  if(!client){status('Biblioteca Supabase indisponível.','error');return;}
+  el('app').classList.add('hidden');
+  try{
+    const {data:session,error:authError}=await client.auth.getUser();
+    if(authError||!session.user){window.location.replace('login.html');return;}
+    const e=await client.from('empresas').select('id,razao_social,nome_fantasia').order('razao_social',{ascending:true}).limit(100);
+    if(e.error)throw e.error;
+    companies=e.data||[];
+    clear(el('company'));
+    for(const row of companies){const o=document.createElement('option');o.value=row.id;o.textContent=row.nome_fantasia||row.razao_social||'Empresa';el('company').append(o)}
+    if(!companies.length){status('Nenhuma empresa visível para este usuário. Confira o vínculo e as políticas RLS.','error');return;}
+    el('app').classList.remove('hidden');
+    await loadCompany();
+  }catch(err){status('Não foi possível consultar as tabelas existentes: '+err.message,'error');}
 }
-async function createDraft(participant_id){
- const c=current();if(!c||c.papel!=='admin')return;
- if(!confirm('Cadastrar uma avaliação em rascunho para este participante?'))return;
- const {error}=await client.from('map360_avaliacoes').insert({empresa_id:c.empresa_id,participante_id,versao_instrumento:'1.2-piloto',status:'rascunho'});
- if(error){message('Não foi possível criar a avaliação: '+error.message,'error');return}
- await load();
+async function loadCompany(){
+  const id=el('company').value;
+  if(!id)return;
+  status('Consultando as tabelas existentes...');
+  try{
+    const [q,a]=await Promise.all([
+      client.from('map_perguntas').select('codigo,dimensao,ativa').eq('ativa',true).limit(100),
+      client.from('map_avaliacoes').select('id',{count:'exact',head:true}).eq('empresa_id',id)
+    ]);
+    if(q.error)throw q.error;
+    if(a.error)throw a.error;
+    const counts=new Map();for(const x of q.data||[])counts.set(x.dimensao,(counts.get(x.dimensao)||0)+1);
+    const tbody=el('dimensions');clear(tbody);
+    for(const [key,label] of [['constancia','Constância'],['acao','Ação'],['estrutura','Estrutura'],['conexao','Conexão']]){
+      const row=document.createElement('tr'),left=document.createElement('td'),right=document.createElement('td');
+      left.textContent=label;right.textContent=String(counts.get(key)||0);row.append(left,right);tbody.append(row);
+    }
+    el('nQuestions').textContent=String((q.data||[]).length);
+    el('nDimensions').textContent=String(counts.size);
+    el('nAssessments').textContent=String(a.count??0);
+    el('assessmentInfo').textContent='A tabela map_avaliacoes retornou '+(a.count??0)+' avaliação(ões) acessível(eis) para esta empresa.';
+    status('Consultas concluídas. Nenhum dado foi gravado.','ok');
+  }catch(err){status('Consulta bloqueada ou incompatível: '+err.message,'error');}
 }
-$('participantForm').addEventListener('submit',async ev=>{
- ev.preventDefault();const c=current();if(!c||c.papel!=='admin')return;
- const name=$('participantName').value.trim();
- if(name.length<2)return;
- $('save').disabled=true;
- try{
-  const {error}=await client.from('map360_participantes').insert({
-   empresa_id:c.empresa_id,nome:name,email:$('participantEmail').value.trim()||null,
-   cargo:$('participantJob').value.trim()||null,criado_por:user.id
-  });
-  if(error)throw error;
-  $('participantForm').reset();await load();
- }catch(err){message('Não foi possível cadastrar: '+err.message,'error')}
- finally{$('save').disabled=false}
-});
-$('company').addEventListener('change',load);
-$('reload').addEventListener('click',boot);
-$('logout').addEventListener('click',async()=>{if(client)await client.auth.signOut();location.replace('login.html')});
-boot();
+el('refresh').addEventListener('click',load);
+el('company').addEventListener('change',loadCompany);
+el('logout').addEventListener('click',async()=>{if(client)await client.auth.signOut();window.location.replace('login.html');});
+load();
 </script></body></html>
