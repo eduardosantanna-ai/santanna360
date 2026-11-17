@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>MAP 360° | Piloto autenticado v1.4</title>
+<style>
+:root{--navy:#14283e;--gold:#b38a47;--bg:#f5f7fa;--line:#dce3ea;--ink:#233248}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:var(--navy);color:white;padding:22px max(18px,calc((100vw - 850px)/2));border-bottom:4px solid var(--gold)}
+header a{color:#ecd39e}header small{display:block;color:#e4ca97}main{max-width:850px;margin:25px auto;padding:0 16px 45px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin:14px 0}
+h1{margin:0;font-size:27px}h2{margin:0 0 10px;font-size:21px}.muted{color:#617289;font-size:14px}
+.alert{background:#fff0db;padding:12px;border-radius:8px;font-size:14px}.error{background:#fee8e6}.ok{background:#e5f6ed}
+button{background:var(--navy);color:white;border:0;border-radius:8px;padding:11px 17px;cursor:pointer;font:inherit}
+button[disabled]{opacity:.5;cursor:not-allowed}button.secondary{background:#e8eff5;color:var(--navy)}
+.options{display:grid;gap:9px;margin:19px 0}.option{border:1px solid var(--line);border-radius:8px;display:flex;gap:10px;align-items:center;padding:11px;cursor:pointer}
+.option:has(input:checked){background:#eaf2fa;border-color:#85a8c8}
+.progress{height:8px;border-radius:7px;background:#e2e8ee;overflow:hidden;margin-top:12px}.progress>div{height:100%;background:var(--gold);width:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.hidden{display:none!important}
+.bar{display:grid;grid-template-columns:115px minmax(0,1fr) 72px;align-items:center;gap:10px;margin:16px 0}
+.track{height:13px;border-radius:9px;background:#e8edf1;overflow:hidden}.fill{height:100%}
+.reading{padding:12px 15px;border-left:4px solid var(--gold);background:#f6f8fa;margin:12px 0}
+@media print{.no-print,header,#quiz,#status{display:none!important}body{background:white}.card{border:0;break-inside:avoid}}
+@media(max-width:540px){.bar{grid-template-columns:90px 1fr 55px;gap:6px;font-size:13px}}
+</style></head><body>
+<header><h1>SANT’ANNA 360 · MAP 360°</h1><small>Constância · Ação · Estrutura · Conexão</small><a href="map360-admin.html">Voltar à administração</a></header>
+<main>
+<div class="alert"><strong>Piloto autenticado, somente leitura.</strong> Carrega as 32 perguntas do Supabase, mas não grava respostas, nomes, avaliações ou resultados. Use apenas respostas fictícias e não utilize esta versão para recrutamento real.</div>
+<p id="status" role="status" aria-live="polite" class="alert">Verificando autenticação e integridade do questionário...</p>
+<section class="card hidden" id="start">
+<h2>Questionário MAP 360°</h2>
+<p>Leia cada afirmação e escolha a frequência que melhor representa o comportamento fictício que deseja simular. Escala: nunca, raramente, às vezes, frequentemente ou sempre.</p>
+<p class="muted">32 afirmações · interpretação experimental · resultados sem armazenamento remoto</p>
+<button id="begin" type="button">Iniciar simulação</button>
+</section>
+<section class="card hidden" id="quiz">
+<p class="muted" id="counter"></p><div class="progress"><div id="progressFill"></div></div>
+<h2 id="prompt"></h2><div class="options" id="options"></div>
+<div class="actions"><button class="secondary" type="button" id="previous">Anterior</button><button type="button" id="next" disabled>Próxima</button></div>
+</section>
+<section class="card hidden" id="result">
+<p class="muted">MAP 360° — Relatório demonstrativo v1.4</p><h2 id="classification"></h2>
+<div id="bars"></div><h2>Leitura objetiva do perfil</h2><p id="summary"></p>
+<h2>Interpretação por dimensão</h2><div id="readings"></div>
+<p class="muted">As pontuações traduzem respostas neste instrumento piloto. Não são percentis, diagnósticos nem previsões de desempenho. O limiar para perfis combinados é experimental.</p>
+<div class="actions no-print"><button id="print" type="button">Imprimir / salvar PDF</button><button id="restart" type="button" class="secondary">Nova simulação</button></div>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/map360-motor-v1_3.js"></script>
+<script>
+'use strict';
+const SUPABASE_URL='https://okvikkifrsbovbppywgp.supabase.co';
+const SUPABASE_PUBLIC_KEY='sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC';
+const byId=id=>document.getElementById(id);
+const client=window.supabase?.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY);
+const labels=['Nunca ou quase nunca','Raramente','Às vezes','Frequentemente','Sempre ou quase sempre'];
+const colors={constancia:'#638d73',acao:'#c7794d',estrutura:'#4c7ea9',conexao:'#bf943e'};
+const behavior={
+ constancia:'regularidade, persistência e acompanhamento contínuo das atividades',
+ acao:'iniciativa, decisões no escopo da função e execução de tarefas',
+ estrutura:'organização, planejamento e conferência das entregas',
+ conexao:'comunicação, alinhamento de expectativas e colaboração'
+};
+let questions=[],answers={},position=0;
+const show=(id,on)=>byId(id).classList.toggle('hidden',!on);
+function status(message,kind=''){const n=byId('status');n.textContent=message;n.className='alert '+kind;}
+async function init(){
+ if(!client||!window.MAP360Motor){status('Falha ao carregar os módulos da aplicação.','error');return;}
+ try{
+  const {data:auth,error:authError}=await client.auth.getUser();
+  if(authError||!auth.user){location.replace('login.html');return;}
+  const {data,error}=await client.from('map_perguntas').select('codigo,dimensao,enunciado,ordem,ativa').eq('ativa',true).order('ordem',{ascending:true}).limit(100);
+  if(error)throw error;
+  questions=data||[];
+  const valid=new Set(['constancia','acao','estrutura','conexao']);
+  const codes=new Set(questions.map(q=>q.codigo));
+  if(questions.length!==32||codes.size!==32||
+    questions.some(q=>!valid.has(q.dimensao)||!q.enunciado||!['C','A','E','X'].includes(q.codigo.charAt(0))||
+      !/^[CAEX](0[1-8])$/.test(q.codigo)) ||
+    [...window.MAP360Motor.DIMENSOES].some(d=>questions.filter(q=>q.dimensao===d.id && q.codigo.startsWith(d.prefixo)).length!==8)){
+      throw new Error('Conjunto cadastrado não corresponde a 32 questões válidas do MAP 360°. Conferir códigos, dimensões e questões ativas.');
+    }
+  status('Questionário carregado do Supabase: 32 perguntas ativas. Nenhuma resposta será enviada ao servidor.','ok');
+  show('start',true);
+ }catch(e){status('Não foi possível carregar as perguntas: '+e.message,'error');}
+}
+function render(){
+ const q=questions[position];byId('counter').textContent='Questão '+(position+1)+' de 32';
+ byId('progressFill').style.width=((position+1)/32*100)+'%';byId('prompt').textContent=q.enunciado;
+ const o=byId('options');o.replaceChildren();
+ labels.forEach((text,i)=>{
+   const label=document.createElement('label');label.className='option';
+   const input=document.createElement('input');input.type='radio';input.name='nota';input.value=String(i+1);
+   input.checked=answers[q.codigo]===i+1;input.onchange=()=>{answers[q.codigo]=i+1;byId('next').disabled=false;};
+   label.append(input,document.createTextNode((i+1)+' — '+text));o.append(label);
+ });
+ byId('previous').disabled=position===0;
+ byId('next').disabled=!answers[q.codigo];
+ byId('next').textContent=position===31?'Concluir e ver relatório':'Próxima';
+}
+function renderResult(){
+ let outcome;
+ try{outcome=window.MAP360Motor.calcular(answers);}
+ catch(e){status('Respostas incompletas: '+e.message,'error');return;}
+ show('quiz',false);show('result',true);
+ byId('classification').textContent=outcome.titulo;
+ const bars=byId('bars');bars.replaceChildren();const readings=byId('readings');readings.replaceChildren();
+ outcome.dimensoes.forEach(d=>{
+   const line=document.createElement('div');line.className='bar';
+   const name=document.createElement('strong');name.textContent=d.nome;
+   const track=document.createElement('div');track.className='track';
+   const fill=document.createElement('div');fill.className='fill';fill.style.background=colors[d.id];fill.style.width=d.indice+'%';track.append(fill);
+   const value=document.createElement('span');value.textContent=d.indice.toLocaleString('pt-BR',{maximumFractionDigits:1})+'/100';
+   line.append(name,track,value);bars.append(line);
+   const section=document.createElement('div');section.className='reading';section.style.borderLeftColor=colors[d.id];
+   const title=document.createElement('strong');title.textContent=d.nome;
+   const p=document.createElement('p');
+   const positivos=d.itens.filter(x=>!x.invertida && x.nota>=4).length;
+   const reversos=d.itens.filter(x=>x.invertida && x.nota<=2).length;
+   p.textContent='Em '+positivos+' dos 6 itens diretos houve relato de frequência elevada de comportamentos associados a '+behavior[d.id]+'. Nos 2 itens de redação invertida, '+reversos+' tiveram respostas de baixa frequência. O índice é descritivo, não comprova desempenho e deve ser interpretado com outras evidências.';
+   section.append(title,p);readings.append(section);
+ });
+ const selected=outcome.predominancias;
+ const joined=selected.join(' e ');
+ byId('summary').textContent=(selected.length===1?'A dimensão mais evidenciada foi ':selected.length===2?'As duas dimensões mais evidenciadas foram ':'Não há uma ou duas dimensões nitidamente destacadas; estão próximas: ')+joined+'. Essa classificação é provisória e reflete somente as respostas fornecidas.';
+}
+byId('begin').onclick=()=>{show('start',false);show('quiz',true);render();};
+byId('previous').onclick=()=>{if(position>0){position--;render();}};
+byId('next').onclick=()=>{if(!answers[questions[position].codigo])return;if(position<31){position++;render();}else renderResult();};
+byId('print').onclick=()=>window.print();
+byId('restart').onclick=()=>{answers={};position=0;show('result',false);show('start',true);};
+init();
+</script></body></html>

@@ -1,0 +1,26 @@
+name: MAP 360 - testes do motor
+on:
+  pull_request:
+    paths:
+      - 'js/map360-motor-v1_3.js'
+      - 'tests/map360-motor-v1_3.test.js'
+      - 'map360-piloto.html'
+      - 'map360-integrado-piloto.html'
+      - 'map360-admin.html'
+      - 'tests/map360-integracao-piloto.test.js'
+      - '.github/workflows/map360-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  motor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Executar testes unitários (sem Supabase)
+        run: node tests/map360-motor-v1_3.test.js
+      - name: Verificar integração piloto sem escrita
+        run: node tests/map360-integracao-piloto.test.js

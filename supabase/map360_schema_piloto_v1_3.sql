@@ -1,0 +1,12 @@
+-- ARQUIVO DESCONTINUADO — NAO EXECUTAR NO SUPABASE.
+-- A estrutura real do ambiente Sant'Anna 360 já possui:
+-- public.empresas, public.colaboradores,
+-- public.map_avaliacoes, public.map_perguntas, public.map_respostas.
+-- O questionário MAP 360° com 32 questões foi cadastrado no ambiente pelo responsável.
+--
+-- Esta proposta de criação de tabelas paralelas foi retirada para evitar
+-- duplicação e desvio dos controles de acesso já existentes.
+-- O módulo map360-admin.html foi adaptado para CONSULTAR as tabelas reais.
+-- Ver docs/MAP360_ROTEIRO_TESTES_V1_3.md antes de qualquer operação de escrita.
+--
+-- Nenhuma instrução DDL/DML neste arquivo.
