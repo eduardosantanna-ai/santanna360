@@ -7,7 +7,7 @@ for(const id of ['executive','management','dimension-readings','pdi','profile-he
 for(const term of ['combinedInterpretations','developmentActions','buildTailoredPlan','page-break-before','@page']){
   assert.ok(html.includes(term),'Ausente: '+term);
 }
-const blocks=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+const blocks=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.ok(blocks.length===1,'Esperado exatamente um script inline');
 new vm.Script(blocks[0][1],{filename:'map360-v1_5-inline.js'});
 assert.ok(!/\.from\(['"]map_respostas['"]\)/.test(html),'Não inserir gravação remota no piloto');
