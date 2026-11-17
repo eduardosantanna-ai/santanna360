@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MAP 360° | Demonstração MAP 360° — Sant’Anna 360</title>
+<title>MAP 360° | Demonstração MAP 360° v1.6.1 — Sant’Anna 360</title>
 <meta name="robots" content="noindex,nofollow">
 <style>
 :root{--navy:#152d40;--accent:#b68b49;--bg:#f4f6f7;--text:#172638;--border:#dce3e8;--muted:#5a6c7b;--green:#638d73;--orange:#c7794d;--blue:#4c7ea9;--gold:#bf943e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif}header{background:var(--navy);color:white;padding:28px max(20px,calc((100vw - 950px)/2));border-bottom:5px solid var(--accent)}header h1{margin:0;font-size:27px}header p{margin:5px 0 0;color:#d8e1e8}main{max-width:950px;margin:26px auto;padding:0 16px 40px}.card{background:white;border:1px solid var(--border);border-radius:16px;padding:26px;margin-bottom:18px;box-shadow:0 2px 8px #0f27300a}.tag{display:inline-block;border-radius:999px;background:#fff1d8;color:#7a540e;padding:5px 11px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em}h2{font-size:24px;margin:15px 0 12px}h3{margin-top:0}.intro{color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}button{background:var(--navy);color:white;border:1px solid var(--navy);border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:15px}button:hover{filter:brightness(1.12)}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:white;color:var(--navy)}.question{font-weight:650;font-size:19px;margin:15px 0 20px}.choices{display:grid;gap:10px}.choice{border:1px solid var(--border);padding:12px 14px;border-radius:10px;display:flex;gap:12px;align-items:center;cursor:pointer}.choice:has(input:checked){border-color:var(--blue);background:#eaf3fc}.choice input{accent-color:var(--navy);width:18px;height:18px}.progress{height:9px;background:#e8eff3;border-radius:20px;overflow:hidden}.progress>div{height:100%;background:var(--accent);transition:width .2s}.topline{display:flex;justify-content:space-between;gap:10px;align-items:center}.dim{display:grid;grid-template-columns:145px 1fr 70px;align-items:center;gap:10px;margin:17px 0}.track{height:17px;border-radius:20px;background:#e9edf0;overflow:hidden}.fill{height:100%;border-radius:20px}.small{color:var(--muted);font-size:13px}.notice{background:#fff9ea;border-left:4px solid #b88d44;padding:14px 16px;margin:17px 0;border-radius:6px}.muted{color:var(--muted)}label.ack{display:flex;align-items:flex-start;gap:10px;margin:16px 0}label.ack input{margin-top:6px}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid var(--border);padding:8px}#results{display:none}#quiz{display:none}#report-meta{font-size:13px;color:var(--muted)}.footer{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}ul{padding-left:22px}@media(max-width:530px){.card{padding:18px}.dim{grid-template-columns:100px 1fr 50px;font-size:13px}header h1{font-size:23px}}@media print{header{padding:15px 0;background:white;color:black;border-bottom:2px solid #777}header p{color:#555}body{background:white}main{margin:0;max-width:none;padding:0}.card{border:0;box-shadow:none;padding:8px 0}.actions,.no-print,#start,#quiz{display:none!important}#results{display:block!important}.notice{border:1px solid #aaa} .track{-webkit-print-color-adjust:exact;print-color-adjust:exact}.fill{-webkit-print-color-adjust:exact;print-color-adjust:exact}button{display:none}}
@@ -32,6 +32,8 @@
 .map-analytic-fill{height:100%;border-radius:12px}
 .map-analytic-table{width:100%;border-collapse:collapse;table-layout:fixed}
 .map-analytic-table th,.map-analytic-table td{padding:10px;border:1px solid #dde4eb;vertical-align:top}
+.map-pdi-table th,.map-pdi-table td{text-align:left!important;hyphens:none;overflow-wrap:break-word}
+.map-pdi-table th:nth-child(1){width:29%}.map-pdi-table th:nth-child(2){width:36%}.map-pdi-table th:nth-child(3){width:35%}
 .map-analytic-table th{background:#edf2f6}
 .map-analytic-footer{text-align:center;margin-top:20px}
 @media print{
@@ -39,8 +41,12 @@
  #results{display:none!important}
  #map-analitico:not(.active){display:none!important}
  #map-analitico.active{display:block!important}
- .map-analytic-section{break-before:page;page-break-before:always;break-inside:auto;border:0;padding:0;margin:0}
- .map-analytic-section:first-of-type{break-before:auto;page-break-before:auto}
+ .map-analytic-section{break-before:auto;page-break-before:auto;break-inside:auto;border:0;padding:0;margin:0 0 18px}
+ .map-analytic-section h2{margin:14px 0 6px}
+ .map-analytic-section p{margin:7px 0 9px;line-height:1.5}
+ .map-analytic-section ul{margin:6px 0 12px}
+ .map-analytic-section li{margin:3px 0}
+ .map-analytic-kicker{margin-bottom:14px}
  .map-analytic-section h2,.map-analytic-section h3{break-after:avoid;page-break-after:avoid}
  .map-analytic-table tr,.map-analytic-score{break-inside:avoid;page-break-inside:avoid}
  #map-analitico p,#map-analitico li,#map-analitico td{text-align:justify;orphans:3;widows:3}
@@ -49,19 +55,19 @@
 </style></head>
 <body><header><h1>SANT’ANNA 360 <span style="color:#d3a75c">| MAP 360°</span></h1><p>Mapeamento de Preferências Comportamentais · Aplicação experimental</p></header>
 <main>
-<section class="card" id="start"><span class="tag">Demonstração pública · v1.5 · PM-MAP360-001</span><h2>Questionário MAP 360°</h2>
+<section class="card" id="start"><span class="tag">Demonstração pública · v1.6.1 · PM-MAP360-001</span><h2>Questionário MAP 360°</h2>
 <p>Este questionário contém 32 afirmações referentes aos comportamentos profissionais dos últimos três meses. Para cada uma, indique a frequência com que a afirmação representa sua experiência real.</p>
 <p>O instrumento está <strong>em desenvolvimento e não possui validação psicométrica concluída</strong>. O resultado não é diagnóstico psicológico, avaliação de aptidão nem critério de contratação.</p>
 <div class="notice"><strong>Privacidade nesta demonstração:</strong> as respostas são processadas exclusivamente neste navegador. Não são transmitidas à Sant’Anna 360, à OpenAI nem a um banco de dados. Esta versão não salva respostas automaticamente. Dados de identificação são opcionais e permanecem somente neste navegador até você fechar a página. O relatório poderá ser impresso ou salvo como PDF no próprio dispositivo.</div>
 <div class="identity"><h3>Identificação opcional do participante</h3><div class="identity-grid"><label>Nome ou código do participante<input id="person" type="text" maxlength="110" autocomplete="off" placeholder="Ex.: Participante P001"></label><label>Empresa<input id="company" type="text" maxlength="110" autocomplete="off" placeholder="Ex.: Empresa demonstrativa"></label><label>Cargo ou área<input id="job" type="text" maxlength="110" autocomplete="off" placeholder="Ex.: Assistente Administrativo"></label></div></div><label class="ack"><input type="checkbox" id="ack"><span>Li e compreendi o caráter experimental e o processamento local desta demonstração.</span></label>
 <div class="actions"><button id="begin" disabled>Começar questionário</button></div></section>
-<section class="card" id="quiz"><div class="topline"><span id="count" class="small"></span><span class="tag">Versão 1.5</span></div><div class="progress" aria-label="Progresso" style="margin:12px 0"><div id="progress" style="width:0"></div></div><div id="question" class="question"></div><div id="choices" class="choices"></div><div class="actions"><button id="prev" class="secondary">Anterior</button><button id="next" disabled>Próxima</button></div><p class="small">Escala: Nunca ou quase nunca · Raramente · Às vezes · Frequentemente · Sempre ou quase sempre.</p></section>
+<section class="card" id="quiz"><div class="topline"><span id="count" class="small"></span><span class="tag">Versão 1.6.1</span></div><div class="progress" aria-label="Progresso" style="margin:12px 0"><div id="progress" style="width:0"></div></div><div id="question" class="question"></div><div id="choices" class="choices"></div><div class="actions"><button id="prev" class="secondary">Anterior</button><button id="next" disabled>Próxima</button></div><p class="small">Escala: Nunca ou quase nunca · Raramente · Às vezes · Frequentemente · Sempre ou quase sempre.</p></section>
 <section id="results" class="card"><span class="tag">Relatório experimental</span><h2>Mapa de Preferências Comportamentais</h2><p id="report-meta"></p>
 <div id="bars"></div><h3>Síntese executiva</h3><p id="executive"></p><h3 id="profile-heading">Classificação descritiva do perfil</h3><p id="interpret"></p><h3>Leitura das quatro dimensões</h3><div id="dimension-readings"></div><h3>Integração comportamental</h3><p id="integration"></p><h3>Orientações ao gestor</h3><p id="management"></p><h3>Plano de Desenvolvimento Individual — orientações priorizadas</h3><p class="small">Ações opcionais baseadas nas respostas e em oportunidades de acompanhamento, não em déficits demonstrados. Defina as metas em conjunto com o participante.</p><div id="pdi"></div><div class="notice"><strong>Limites:</strong> os índices de 0 a 100 são transformações aritméticas de respostas de autorrelato, não percentis nem probabilidades. Pontuações menores não significam deficiência ou inadequação profissional. Não usar os resultados isoladamente para contratação, promoção ou desligamento.</div>
 
 <div class="actions"><button id="show-analitico" type="button">Abrir relatório analítico (10 seções)</button><button onclick="window.print()">Imprimir / Salvar em PDF</button><button id="export" class="secondary">Exportar resultados (JSON)</button><button id="restart" class="secondary">Nova aplicação</button></div></section>
 <div id="map-analitico"></div><div id="analytic-actions" class="actions no-print" style="display:none"><button id="back-executivo" type="button">Voltar ao relatório executivo</button><button id="print-analitico" type="button">Imprimir relatório analítico / PDF</button></div>
-<p class="footer">Sant’Anna 360 · MAP 360° · Instrumento piloto PM-MAP360-001 · Interface v1.5 · Uso experimental</p></main>
+<p class="footer">Sant’Anna 360 · MAP 360° · Instrumento piloto PM-MAP360-001 · Interface v1.6.1 · Uso experimental</p></main>
 <script src="js/map360-motor-v1_3.js"></script>
 <script src="js/map360-relatorio-analitico-v1_6.js"></script>
 <script>
