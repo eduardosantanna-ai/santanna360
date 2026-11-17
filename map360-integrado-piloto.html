@@ -114,8 +114,9 @@ function renderResult(){
    const section=document.createElement('div');section.className='reading';section.style.borderLeftColor=colors[d.id];
    const title=document.createElement('strong');title.textContent=d.nome;
    const p=document.createElement('p');
-   const frequent=d.itens.filter(x=>x.notaCorrigida>=4).length;
-   p.textContent='As respostas indicam frequência mais elevada em '+frequent+' de 8 comportamentos associados a '+behavior[d.id]+'. O índice é descritivo e deve ser interpretado com outras evidências.';
+   const positivos=d.itens.filter(x=>!x.invertida && x.nota>=4).length;
+   const reversos=d.itens.filter(x=>x.invertida && x.nota<=2).length;
+   p.textContent='Em '+positivos+' dos 6 itens diretos houve relato de frequência elevada de comportamentos associados a '+behavior[d.id]+'. Nos 2 itens de redação invertida, '+reversos+' tiveram respostas de baixa frequência. O índice é descritivo, não comprova desempenho e deve ser interpretado com outras evidências.';
    section.append(title,p);readings.append(section);
  });
  const selected=outcome.predominancias;
