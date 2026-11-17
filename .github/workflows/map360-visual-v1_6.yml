@@ -24,6 +24,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Simular avaliação fictícia e gerar PDF
         run: node tests/map360-v1_6-visual.js
+      - name: Instalar ferramentas de inspeção PDF
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - name: Inspecionar paginação do PDF
         run: |
           pdfinfo visual-review/map360-v1_6-analitico.pdf | grep Pages
