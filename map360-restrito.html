@@ -41,7 +41,7 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 <main>
 <section class="card no-print">
 <h1>MAP 360° — Avaliações por empresa</h1>
-<p class="alert"><strong>Versão de homologação somente leitura.</strong> Não cria avaliações, não envia convites e não altera respostas. O relatório só é gerado quando há exatamente 32 respostas válidas na avaliação e empresa selecionadas.</p>
+<p class="alert"><strong>Versão de homologação somente leitura e exclusiva para administrador.</strong> Não cria avaliações, não envia convites e não altera respostas. O relatório só é gerado quando há exatamente 32 respostas válidas na avaliação e empresa selecionadas.</p>
 <p id="status" class="alert" role="status" aria-live="polite">Verificando sua sessão...</p>
 <div id="app" class="hidden">
 <label for="empresa">Empresa acessível</label><select id="empresa"></select>
@@ -73,6 +73,9 @@ async function init(){
   const {data,error}=await client.auth.getUser();
   if(error||!data.user){location.replace('login.html');return;}
   user=data.user;
+  // Publicação provisória: SOMENTE administrador ativo. Acesso de clientes só após testes RLS multiempresa.
+  const {data:perfil,error:perfilError}=await client.from('perfis').select('ativo,administrador').eq('id',user.id).maybeSingle();
+  if(perfilError||!perfil?.ativo||!perfil?.administrador){document.body.classList.add('ready');status('Módulo de consulta em homologação: acesso temporariamente exclusivo ao administrador.','error');return;}
   // Os dados só são visíveis caso as políticas RLS do Supabase autorizem a sessão.
   const e=await client.from('empresas').select('id,razao_social,nome_fantasia').order('razao_social').limit(100);
   if(e.error)throw e.error;
