@@ -16,6 +16,36 @@
   .pdi-table{font-size:12px;table-layout:fixed}
   .pdi-table th,.pdi-table td{overflow-wrap:break-word;padding:6px}
 }
+
+/* MAP 360°: texto justificado nos relatórios digital e impresso */
+#results p:not(.small):not(.footer),#map-analitico p,.map-analytic-section li,.map-analytic-table td{
+ text-align:justify;text-justify:inter-word;hyphens:auto;overflow-wrap:break-word
+}
+#map-analitico{display:none}
+#map-analitico.active{display:block}
+.map-analytic-section{background:#fff;padding:24px 26px;margin:0 0 16px;border:1px solid #dce3e8;border-radius:10px}
+.map-analytic-section h2{color:#152d40;font-size:20px}
+.map-analytic-section p{line-height:1.65}
+.map-analytic-kicker,.map-analytic-footer{color:#6d7280;font-size:12px}
+.map-analytic-score{margin:15px 0}
+.map-analytic-track{height:12px;border-radius:12px;background:#e5eaf0;overflow:hidden;margin-top:7px}
+.map-analytic-fill{height:100%;border-radius:12px}
+.map-analytic-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.map-analytic-table th,.map-analytic-table td{padding:10px;border:1px solid #dde4eb;vertical-align:top}
+.map-analytic-table th{background:#edf2f6}
+.map-analytic-footer{text-align:center;margin-top:20px}
+@media print{
+ @page{size:A4;margin:16mm 14mm}
+ #results{display:none!important}
+ #map-analitico:not(.active){display:none!important}
+ #map-analitico.active{display:block!important}
+ .map-analytic-section{break-before:page;page-break-before:always;break-inside:auto;border:0;padding:0;margin:0}
+ .map-analytic-section:first-of-type{break-before:auto;page-break-before:auto}
+ .map-analytic-section h2,.map-analytic-section h3{break-after:avoid;page-break-after:avoid}
+ .map-analytic-table tr,.map-analytic-score{break-inside:avoid;page-break-inside:avoid}
+ #map-analitico p,#map-analitico li,#map-analitico td{text-align:justify;orphans:3;widows:3}
+ header{display:none}
+}
 </style></head>
 <body><header><h1>SANT’ANNA 360 <span style="color:#d3a75c">| MAP 360°</span></h1><p>Mapeamento de Preferências Comportamentais · Aplicação experimental</p></header>
 <main>
@@ -29,9 +59,11 @@
 <section id="results" class="card"><span class="tag">Relatório experimental</span><h2>Mapa de Preferências Comportamentais</h2><p id="report-meta"></p>
 <div id="bars"></div><h3>Síntese executiva</h3><p id="executive"></p><h3 id="profile-heading">Classificação descritiva do perfil</h3><p id="interpret"></p><h3>Leitura das quatro dimensões</h3><div id="dimension-readings"></div><h3>Integração comportamental</h3><p id="integration"></p><h3>Orientações ao gestor</h3><p id="management"></p><h3>Plano de Desenvolvimento Individual — orientações priorizadas</h3><p class="small">Ações opcionais baseadas nas respostas e em oportunidades de acompanhamento, não em déficits demonstrados. Defina as metas em conjunto com o participante.</p><div id="pdi"></div><div class="notice"><strong>Limites:</strong> os índices de 0 a 100 são transformações aritméticas de respostas de autorrelato, não percentis nem probabilidades. Pontuações menores não significam deficiência ou inadequação profissional. Não usar os resultados isoladamente para contratação, promoção ou desligamento.</div>
 
-<div class="actions"><button onclick="window.print()">Imprimir / Salvar em PDF</button><button id="export" class="secondary">Exportar resultados (JSON)</button><button id="restart" class="secondary">Nova aplicação</button></div></section>
+<div class="actions"><button id="show-analitico" type="button">Abrir relatório analítico (10 seções)</button><button onclick="window.print()">Imprimir / Salvar em PDF</button><button id="export" class="secondary">Exportar resultados (JSON)</button><button id="restart" class="secondary">Nova aplicação</button></div></section>
+<div id="map-analitico"></div><div id="analytic-actions" class="actions no-print" style="display:none"><button id="back-executivo" type="button">Voltar ao relatório executivo</button><button id="print-analitico" type="button">Imprimir relatório analítico / PDF</button></div>
 <p class="footer">Sant’Anna 360 · MAP 360° · Instrumento piloto PM-MAP360-001 · Interface v1.5 · Uso experimental</p></main>
 <script src="js/map360-motor-v1_3.js"></script>
+<script src="js/map360-relatorio-analitico-v1_6.js"></script>
 <script>
 'use strict';
 const items=[{"id": "C01", "text": "Mantenho a regularidade das minhas entregas, mesmo em períodos de maior demanda.", "dim": "C", "reverse": false}, {"id": "A01", "text": "Tomo a iniciativa de começar atividades sem precisar de lembretes constantes.", "dim": "A", "reverse": false}, {"id": "E01", "text": "Organizo minhas atividades antes de iniciar trabalhos que envolvem várias etapas.", "dim": "E", "reverse": false}, {"id": "X01", "text": "Compartilho informações relevantes com as pessoas envolvidas no meu trabalho.", "dim": "X", "reverse": false}, {"id": "C02", "text": "Procuro concluir as atividades que inicio, mesmo quando surgem dificuldades.", "dim": "C", "reverse": false}, {"id": "A02", "text": "Proponho soluções quando identifico problemas no trabalho.", "dim": "A", "reverse": false}, {"id": "E02", "text": "Confiro informações importantes antes de finalizar uma entrega.", "dim": "E", "reverse": false}, {"id": "X02", "text": "Procuro compreender o ponto de vista dos colegas antes de responder a uma divergência.", "dim": "X", "reverse": false}, {"id": "C03", "text": "Consigo manter o foco em tarefas que exigem acompanhamento prolongado.", "dim": "C", "reverse": false}, {"id": "A03", "text": "Consigo tomar decisões dentro das responsabilidades que me foram atribuídas.", "dim": "A", "reverse": false}, {"id": "E03", "text": "Utilizo registros, listas ou ferramentas para acompanhar minhas responsabilidades.", "dim": "E", "reverse": false}, {"id": "X03", "text": "Busco alinhar expectativas com as pessoas que participam das minhas atividades.", "dim": "X", "reverse": false}, {"id": "C04", "text": "Cumpro compromissos de trabalho de maneira consistente.", "dim": "C", "reverse": false}, {"id": "A04", "text": "Transformo objetivos definidos em ações concretas.", "dim": "A", "reverse": false}, {"id": "E04", "text": "Procuro identificar etapas e prazos ao planejar uma atividade.", "dim": "E", "reverse": false}, {"id": "X04", "text": "Colaboro com colegas na resolução de problemas compartilhados.", "dim": "X", "reverse": false}, {"id": "C05", "text": "Mantenho minhas rotinas essenciais mesmo quando tenho várias responsabilidades.", "dim": "C", "reverse": false}, {"id": "A05", "text": "Busco alternativas para superar obstáculos que impedem a execução de uma tarefa.", "dim": "A", "reverse": false}, {"id": "E05", "text": "Organizo documentos e informações para facilitar sua localização.", "dim": "E", "reverse": false}, {"id": "X05", "text": "Expresso minhas ideias de maneira compreensível nas interações profissionais.", "dim": "X", "reverse": false}, {"id": "C06", "text": "Continuo me dedicando a uma atividade mesmo quando os resultados demoram a aparecer.", "dim": "C", "reverse": false}, {"id": "A06", "text": "Assumo a iniciativa quando percebo que uma atividade importante está parada.", "dim": "A", "reverse": false}, {"id": "E06", "text": "Verifico se minhas entregas atendem aos critérios de qualidade definidos.", "dim": "E", "reverse": false}, {"id": "X06", "text": "Procuro construir relações de respeito e cooperação com as pessoas com quem trabalho.", "dim": "X", "reverse": false}, {"id": "C07", "text": "Costumo abandonar uma tarefa quando sua conclusão exige esforço prolongado.", "dim": "C", "reverse": true}, {"id": "A07", "text": "Mesmo sabendo o que precisa ser feito, frequentemente adio o início das atividades.", "dim": "A", "reverse": true}, {"id": "E07", "text": "Frequentemente perco informações importantes por falta de organização.", "dim": "E", "reverse": true}, {"id": "X07", "text": "Deixo de comunicar informações importantes a colegas que dependem delas para realizar suas tarefas.", "dim": "X", "reverse": true}, {"id": "C08", "text": "Tenho dificuldade em manter a continuidade das minhas atividades ao longo da semana.", "dim": "C", "reverse": true}, {"id": "A08", "text": "Evito tomar decisões que estão sob minha responsabilidade, mesmo quando disponho das informações necessárias.", "dim": "A", "reverse": true}, {"id": "E08", "text": "Costumo executar tarefas complexas sem acompanhar suas etapas ou prazos.", "dim": "E", "reverse": true}, {"id": "X08", "text": "Tenho dificuldade em ouvir opiniões diferentes das minhas durante discussões de trabalho.", "dim": "X", "reverse": true}];
@@ -160,7 +192,11 @@ head.append(hr);tb.append(head);
 const body=document.createElement('tbody');
 for(const plan of plans){const tr=document.createElement('tr');for(const value of [plan.dim+' — '+plan.foco+'. '+plan.nota,plan.acao,plan.indicador]){const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
 tb.append(body);pdi.append(tb);
+window.MAP360Analitico.render(el('map-analitico'),{calculo:calculated,respostas:responseMap});
 lastPayload={instrument:'MAP 360°',instrumentVersion:'1.0',interfaceVersion:'1.5',calculo:calculated,status:'piloto_nao_validado',generatedAt:new Date().toISOString(),identification,answers:items.map((item,i)=>({id:item.id,value:answers[i]})),rawScores:sums,indices0to100:values,classification,dimensionsHighlighted:near,planoPersonalizado:plans,classificationRule:'até 6,25 pontos do índice mais alto; 1=predominante, 2=combinado, 3-4=multidimensional; experimental',notes:'Questionário experimental de autorrelato. Não é diagnóstico nem critério eliminatório.'};el('quiz').style.display='none';el('results').style.display='block';window.scrollTo(0,0);}
+el('show-analitico').addEventListener('click',()=>{el('results').style.display='none';el('map-analitico').classList.add('active');el('analytic-actions').style.display='flex';window.scrollTo(0,0);});
+el('back-executivo').addEventListener('click',()=>{el('map-analitico').classList.remove('active');el('analytic-actions').style.display='none';el('results').style.display='block';window.scrollTo(0,0);});
+el('print-analitico').addEventListener('click',()=>window.print());
 el('export').addEventListener('click',()=>{if(!lastPayload)return;const file=new Blob([JSON.stringify(lastPayload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(file);const link=document.createElement('a');link.href=url;link.download='MAP360_resultado_piloto.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});
-el('restart').addEventListener('click',()=>{lastPayload=null;el('person').value='';el('company').value='';el('job').value='';answers.fill(null);index=0;el('results').style.display='none';el('start').style.display='block';el('ack').checked=false;el('begin').disabled=true;window.scrollTo(0,0);});
+el('restart').addEventListener('click',()=>{lastPayload=null;el('map-analitico').classList.remove('active');el('analytic-actions').style.display='none';el('person').value='';el('company').value='';el('job').value='';answers.fill(null);index=0;el('results').style.display='none';el('start').style.display='block';el('ack').checked=false;el('begin').disabled=true;window.scrollTo(0,0);});
 </script></body></html>

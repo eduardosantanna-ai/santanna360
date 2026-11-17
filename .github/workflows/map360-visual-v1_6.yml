@@ -1,0 +1,37 @@
+name: MAP 360 - revisão visual v1.6
+on:
+  pull_request:
+    paths:
+      - 'map360-demo.html'
+      - 'js/map360-relatorio-analitico-v1_6.js'
+      - 'tests/map360-v1_6-visual.js'
+      - '.github/workflows/map360-visual-v1_6.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar navegador de testes
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Simular avaliação fictícia e gerar PDF
+        run: node tests/map360-v1_6-visual.js
+      - name: Instalar ferramentas de inspeção PDF
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Inspecionar paginação do PDF
+        run: |
+          pdfinfo visual-review/map360-v1_6-analitico.pdf | grep Pages
+          pdftotext visual-review/map360-v1_6-analitico.pdf - | wc -c
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: map360-v1-6-visual
+          path: visual-review/
