@@ -9,7 +9,7 @@
 #results h3{break-after:avoid-page;page-break-after:avoid}
 .reading,.pdi-table tr{break-inside:avoid-page;page-break-inside:avoid}
 @media print{
-  @page{size:A4;margin:16mm 14mm}
+  @page{size:A4;margin:11mm 12mm}
   #dimension-readings{break-before:page;page-break-before:always}
   #dimension-readings::before{content:"Leitura das quatro dimensões";display:block;font-size:19px;font-weight:700;margin-bottom:12px}
   #results h3:has(+ #dimension-readings){display:none}
@@ -37,7 +37,7 @@
 .map-analytic-table th{background:#edf2f6}
 .map-analytic-footer{text-align:center;margin-top:20px}
 @media print{
- @page{size:A4;margin:16mm 14mm}
+ @page{size:A4;margin:11mm 12mm}
  /* Impressão consistente: nunca ocultar os dois relatórios ao mesmo tempo. */
  #start,#quiz,#results,#map-analitico{display:none!important}
  body:not(.map-report-ready) #start{display:block!important}
