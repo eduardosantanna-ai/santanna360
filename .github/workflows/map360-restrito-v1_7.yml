@@ -1,0 +1,19 @@
+name: MAP 360 - area restrita v1.7
+on:
+  pull_request:
+    paths:
+      - 'map360-restrito.html'
+      - 'tests/map360-restrito-v1_7.test.js'
+      - '.github/workflows/map360-restrito-v1_7.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/map360-restrito-v1_7.test.js
