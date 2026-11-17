@@ -1,4 +1,4 @@
-/* MAP 360°: relatório analítico demonstrativo v1.6.
+/* MAP 360°: relatório analítico demonstrativo v1.6.1.
  * Somente dados locais da avaliação, sem requisições de rede.
  */
 (function(global){
@@ -41,7 +41,7 @@ function append(container,data){
  const scores=Object.fromEntries(calculo.dimensoes.map(d=>[d.nome,d.indice]));
  const selected=leaders.map(d=>d.name).join(' + ');
  container.replaceChildren();
- container.append(elt('div','map-analytic-kicker','SANT’ANNA 360  /  MAP 360°  /  RELATÓRIO ANALÍTICO V1.6'));
+ container.append(elt('div','map-analytic-kicker','SANT’ANNA 360  /  MAP 360°  /  RELATÓRIO ANALÍTICO V1.6.1'));
  let sec=section(container,'1. Apresentação e objetivos','Análise técnica descritiva para reflexão sobre preferências de trabalho, com base nas 32 afirmações do MAP 360°.');
  para(sec,'Este relatório organiza as respostas nas dimensões Constância, Ação, Estrutura e Conexão. Nenhuma pontuação representa capacidade comprovada, adequação a cargo, percentil ou previsão de desempenho. Os exemplos e orientações são hipóteses de desenvolvimento e exigem contextualização com a experiência da pessoa.');
  para(sec,'A avaliação foi concluída no navegador e não é transmitida automaticamente a servidores. O relatório pode ser impresso ou salvo localmente. Recomenda-se preservar a privacidade dos resultados.');
@@ -58,11 +58,11 @@ function append(container,data){
  }
  para(sec,'Pontuações maiores indicam maior frequência de respostas compatíveis com os comportamentos listados naquela dimensão. Uma pontuação relativamente menor não equivale a deficiência profissional.');
 
- for(const d of dims){
+ for(const [dimensionIndex,d] of dims.entries()){
   const direct=Array.from({length:6},(_,i)=>({idx:i,n:respostas[d.code+String(i+1).padStart(2,'0')],label:d.strength[i]}));
   const high=direct.filter(x=>x.n>=4),low=direct.filter(x=>x.n<=2),mid=direct.filter(x=>x.n===3);
   const inv=[7,8].map(i=>respostas[d.code+String(i).padStart(2,'0')]);
-  sec=section(container,'4. Leitura da dimensão '+d.name,'Dimensão relacionada a '+d.subject+'.');
+  sec=section(container,'4.'+(dimensionIndex+1)+' Leitura da dimensão '+d.name,'Dimensão relacionada a '+d.subject+'.');
   para(sec,'Pontuação desta aplicação: '+scores[d.name].toLocaleString('pt-BR',{maximumFractionDigits:1})+' de 100. Ela é calculada a partir de oito itens, incluindo dois com pontuação invertida. Não deve ser interpretada isoladamente como diagnóstico.');
   para(sec,'Comportamentos declarados com maior frequência: '+(high.length?high.map(x=>x.label).join(', '):'nenhum dos seis itens diretos atingiu frequência elevada')+'.');
   para(sec,'Comportamentos relatados com menor frequência: '+(low.length?low.map(x=>x.label).join(', '):'não houve respostas baixas nos seis itens diretos')+'.');
@@ -80,7 +80,7 @@ function append(container,data){
  para(sec,'O gestor pode usar o relatório para orientar uma devolutiva e propor experiências práticas, mas não para estabelecer capacidade profissional, promoção ou eliminação de candidatos. A leitura deve ser corroborada por evidências e diálogo com o participante.');
  textList(sec,['Apresente os resultados como frequências autorrelatadas, não como características permanentes.','Solicite exemplos concretos sem presumir que o questionário revela a personalidade completa.','Combine uma ou duas ações de desenvolvimento apropriadas à função e ao contexto.','Revise o plano com o participante, respeitando confidencialidade e finalidade.']);
  sec=section(container,'8. Plano de Desenvolvimento Individual (PDI)','Sugestões iniciais vinculadas às respostas; a pactuação é opcional e requer revisão humana.');
- const table=elt('table','map-analytic-table'),thead=elt('thead'),headRow=elt('tr');
+ const table=elt('table','map-analytic-table map-pdi-table'),thead=elt('thead'),headRow=elt('tr');
  for(const t of ['Foco observado','Ação proposta','Evidência e prazo'])headRow.append(elt('th','',t));
  thead.append(headRow);table.append(thead);
  const tbody=elt('tbody');
@@ -97,7 +97,7 @@ function append(container,data){
  sec=section(container,'10. Critérios técnicos e limites','Documentação do funcionamento experimental.');
  para(sec,'O MAP 360° possui 32 afirmações, oito em cada dimensão. As respostas vão de 1 a 5 e os itens terminados em 07 ou 08 usam pontuação reversa (6 menos a nota). A soma por dimensão varia de 8 a 40 e é convertida pela fórmula (soma − 8) × 100 / 32.');
  para(sec,'A classificação usa provisoriamente a proximidade de até 6,25 pontos do maior índice. Esta regra não tem validade normativa demonstrada. Os resultados não são percentis e não comprovam desempenho, inteligência, saúde mental, aptidão ou probabilidade de sucesso.');
- para(sec,'Versão: MAP 360° v1.6 demonstrativa. Documento emitido automaticamente, sem revisão de especialista individual e sem validação científica concluída.');
+ para(sec,'Versão: MAP 360° v1.6.1 demonstrativa. Documento emitido automaticamente, sem revisão de especialista individual e sem validação científica concluída.');
  container.append(elt('p','map-analytic-footer','Sant’Anna 360 · MAP 360° · Documento experimental · Uso para desenvolvimento e demonstração'));
 }
 global.MAP360Analitico={render:append};
