@@ -1,30 +1,27 @@
-# MAP 360 - Roteiro de testes e ativacao do piloto v1.3
+# MAP 360° — Roteiro de testes v1.3 (tabelas existentes)
 
-A PR numero 1 ainda esta em rascunho. Nenhuma migracao foi aplicada ao Supabase.
+**Estado:** protótipo não publicado; GitHub PR #1 em rascunho. O banco de produção **já possui** as tabelas empresas, colaboradores, map_perguntas, map_avaliacoes e map_respostas. Não executar a migração antiga `supabase/map360_schema_piloto_v1_3.sql` (arquivo desativado). Não executar `map360_verificacao_somente_leitura.sql` antigo, pois é voltado às tabelas paralelas.
 
-## Antes da implantacao
-1. Confirmar ambiente e realizar backup com administrador Supabase.
-2. Revisar supabase/map360_schema_piloto_v1_3.sql e executar manualmente, preferencialmente em ambiente de desenvolvimento.
-3. Cadastrar empresa FICTICIA e associar usuario de TESTE autorizado com UUIDs reais pelo SQL Editor.
-4. Executar supabase/map360_verificacao_somente_leitura.sql; verificar politicas RLS e permissoes.
+## Testes sem escrita: executáveis após revisão do responsável
+1. Abrir `map360-admin.html` na ramificação de desenvolvimento/ambiente de staging, sem estar logado. Esperado: redirecionamento para login.
+2. Entrar com usuário autorizado, verificar a lista de empresas permitidas.
+3. Verificar contagem das 32 perguntas (8 por dimensão).
+4. Trocar a empresa autorizada e verificar contagem das avaliações visíveis.
+5. Usuário sem vínculo deve visualizar zero empresas, nenhuma avaliação.
+6. Com duas empresas fictícias e usuários de teste distintos, confirmar isolamento RLS para cada papel com testes de API (seleção, inserção, alteração e exclusão), em **ambiente de homologação**, não diretamente no banco em produção.
+7. Verificar que não existem cadastros nem envio de respostas na página administrativa.
+8. Testar navegador desktop e celular, visualização de erros e saída de sessão.
 
-## Testes previstos (nao executados)
-| ID | Acao | Resultado esperado |
-|---|---|---|
-| A1 | Abrir map360-admin.html sem login | Redireciona para login |
-| A2 | Login sem vinculo de empresa | Sem acesso a cadastros |
-| A3 | Usuario com permissao leitura | So consulta, sem cadastro |
-| A4 | Admin empresa A cadastra participante ficticio | Registra na empresa A |
-| A5 | Admin empresa A cria avaliacao | Salva rascunho sem respostas |
-| A6 | Usuario empresa B tenta ver dados da A (inclusive chamada direta) | Acesso negado |
-| A7 | Tentar inserir respostas e pontuacoes | Negado por restricao do piloto |
-| A8 | Tentar criar vinculo de acesso pela API do navegador | Acesso negado |
-| A9 | Questionario demonstrativo | Sem escrita no Supabase |
-| A10 | Reabrir navegador autenticado | Consulta dados do banco permitido |
+## Itens pendentes antes de criar avaliações reais
+- Conferir todas as colunas, constraints e FKs de `map_avaliacoes`, `map_respostas` e `map_perguntas`.
+- Examinar permissões RLS completas, incluindo função s360_admin e s360_acesso e testes contra acessos cruzados.
+- Implementar aplicação segura de avaliação vinculada a empresa e consentimento/finalidade.
+- Verificar LGPD, tempo de retenção, autorização de acesso a relatórios e aderência metodológica.
+- Integrar motor de cálculo v1.3 e persistência somente após passar pelos testes.
 
-## Condicoes de liberacao
-- Confirmar todos os testes acima em ambiente controlado, em desktop e celular.
-- Nenhum dado pessoal real nesta fase.
-- Separar formulario publico e acesso administrativo; GitHub Pages NAO impede acesso direto aos arquivos publicados.
-- Para convites e resultados reais, implementar servidor seguro/Edge Function, tokens unicos e fluxo de privacidade.
-- O MAP 360 permanece experimental e nao deve eliminar candidatos automaticamente.
+## Status até aqui
+- As 32 perguntas já foram cadastradas pelo usuário em produção, com 8 por dimensão.
+- O motor de cálculo está salvo em `js/map360-motor-v1_3.js`; testes em `tests/map360-motor-v1_3.test.js`.
+- Os testes unitários estão escritos, mas ainda não existe evidência de execução na CI.
+- `map360-admin.html` **somente consulta** `empresas`, `map_perguntas`, `map_avaliacoes`.
+- Nenhum merge, deploy ou alteração de SQL foi feita neste passo.
