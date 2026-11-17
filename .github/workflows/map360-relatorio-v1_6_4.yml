@@ -1,0 +1,32 @@
+name: MAP360 teste pagina residual v1.6.4
+on:
+  pull_request:
+    paths:
+      - 'map360-demo.html'
+      - 'tests/map360-relatorio-v1_6_4.js'
+      - '.github/workflows/map360-relatorio-v1_6_4.yml'
+permissions:
+  contents: read
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - run: node tests/map360-relatorio-v1_6_4.js
+      - run: |
+          sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+          pdfinfo visual-review/map360-1-6-4.pdf | grep Pages
+          test "$(pdfinfo visual-review/map360-1-6-4.pdf | awk '/Pages:/ {print $2}')" -le 3
+          pdftotext visual-review/map360-1-6-4.pdf - | grep -F '10. Critérios técnicos e limites'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: map360-review-164
+          path: visual-review/
