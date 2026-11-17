@@ -5,21 +5,32 @@
 <style>
 :root{--navy:#152d40;--accent:#b68b49;--bg:#f4f6f7;--text:#172638;--border:#dce3e8;--muted:#5a6c7b;--green:#638d73;--orange:#c7794d;--blue:#4c7ea9;--gold:#bf943e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif}header{background:var(--navy);color:white;padding:28px max(20px,calc((100vw - 950px)/2));border-bottom:5px solid var(--accent)}header h1{margin:0;font-size:27px}header p{margin:5px 0 0;color:#d8e1e8}main{max-width:950px;margin:26px auto;padding:0 16px 40px}.card{background:white;border:1px solid var(--border);border-radius:16px;padding:26px;margin-bottom:18px;box-shadow:0 2px 8px #0f27300a}.tag{display:inline-block;border-radius:999px;background:#fff1d8;color:#7a540e;padding:5px 11px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em}h2{font-size:24px;margin:15px 0 12px}h3{margin-top:0}.intro{color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}button{background:var(--navy);color:white;border:1px solid var(--navy);border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:15px}button:hover{filter:brightness(1.12)}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:white;color:var(--navy)}.question{font-weight:650;font-size:19px;margin:15px 0 20px}.choices{display:grid;gap:10px}.choice{border:1px solid var(--border);padding:12px 14px;border-radius:10px;display:flex;gap:12px;align-items:center;cursor:pointer}.choice:has(input:checked){border-color:var(--blue);background:#eaf3fc}.choice input{accent-color:var(--navy);width:18px;height:18px}.progress{height:9px;background:#e8eff3;border-radius:20px;overflow:hidden}.progress>div{height:100%;background:var(--accent);transition:width .2s}.topline{display:flex;justify-content:space-between;gap:10px;align-items:center}.dim{display:grid;grid-template-columns:145px 1fr 70px;align-items:center;gap:10px;margin:17px 0}.track{height:17px;border-radius:20px;background:#e9edf0;overflow:hidden}.fill{height:100%;border-radius:20px}.small{color:var(--muted);font-size:13px}.notice{background:#fff9ea;border-left:4px solid #b88d44;padding:14px 16px;margin:17px 0;border-radius:6px}.muted{color:var(--muted)}label.ack{display:flex;align-items:flex-start;gap:10px;margin:16px 0}label.ack input{margin-top:6px}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid var(--border);padding:8px}#results{display:none}#quiz{display:none}#report-meta{font-size:13px;color:var(--muted)}.footer{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}ul{padding-left:22px}@media(max-width:530px){.card{padding:18px}.dim{grid-template-columns:100px 1fr 50px;font-size:13px}header h1{font-size:23px}}@media print{header{padding:15px 0;background:white;color:black;border-bottom:2px solid #777}header p{color:#555}body{background:white}main{margin:0;max-width:none;padding:0}.card{border:0;box-shadow:none;padding:8px 0}.actions,.no-print,#start,#quiz{display:none!important}#results{display:block!important}.notice{border:1px solid #aaa} .track{-webkit-print-color-adjust:exact;print-color-adjust:exact}.fill{-webkit-print-color-adjust:exact;print-color-adjust:exact}button{display:none}}
 .identity{margin:20px 0}.identity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.identity-grid label{font-size:13px;font-weight:650}.identity-grid input{display:block;width:100%;border-radius:9px;border:1px solid var(--border);padding:12px;margin-top:5px;font:inherit}.reading{border-left:4px solid var(--accent);padding:8px 14px;margin:13px 0;background:#f7f9fa;border-radius:0 8px 8px 0}.reading h4{margin:0 0 7px}.reading p{margin:0}.pdi-table th{background:#eef2f5}.pdi-table td{vertical-align:top;font-size:14px}@media(max-width:650px){.identity-grid{grid-template-columns:1fr}.pdi-table{font-size:13px}}@media print{.identity{display:none}.reading,.pdi-table{break-inside:avoid}#dimension-readings,#pdi{display:block}#results{page-break-before:auto}}
+/* Relatório v1.5: evitar títulos órfãos e linhas partidas na impressão */
+#results h3{break-after:avoid-page;page-break-after:avoid}
+.reading,.pdi-table tr{break-inside:avoid-page;page-break-inside:avoid}
+@media print{
+  @page{size:A4;margin:16mm 14mm}
+  #dimension-readings{break-before:page;page-break-before:always}
+  #dimension-readings::before{content:"Leitura das quatro dimensões";display:block;font-size:19px;font-weight:700;margin-bottom:12px}
+  #results h3:has(+ #dimension-readings){display:none}
+  .pdi-table{font-size:12px;table-layout:fixed}
+  .pdi-table th,.pdi-table td{overflow-wrap:break-word;padding:6px}
+}
 </style></head>
 <body><header><h1>SANT’ANNA 360 <span style="color:#d3a75c">| MAP 360°</span></h1><p>Mapeamento de Preferências Comportamentais · Aplicação experimental</p></header>
 <main>
-<section class="card" id="start"><span class="tag">Demonstração pública · v1.3 · PM-MAP360-001</span><h2>Questionário MAP 360°</h2>
+<section class="card" id="start"><span class="tag">Demonstração pública · v1.5 · PM-MAP360-001</span><h2>Questionário MAP 360°</h2>
 <p>Este questionário contém 32 afirmações referentes aos comportamentos profissionais dos últimos três meses. Para cada uma, indique a frequência com que a afirmação representa sua experiência real.</p>
 <p>O instrumento está <strong>em desenvolvimento e não possui validação psicométrica concluída</strong>. O resultado não é diagnóstico psicológico, avaliação de aptidão nem critério de contratação.</p>
 <div class="notice"><strong>Privacidade nesta demonstração:</strong> as respostas são processadas exclusivamente neste navegador. Não são transmitidas à Sant’Anna 360, à OpenAI nem a um banco de dados. Esta versão não salva respostas automaticamente. Dados de identificação são opcionais e permanecem somente neste navegador até você fechar a página. O relatório poderá ser impresso ou salvo como PDF no próprio dispositivo.</div>
 <div class="identity"><h3>Identificação opcional do participante</h3><div class="identity-grid"><label>Nome ou código do participante<input id="person" type="text" maxlength="110" autocomplete="off" placeholder="Ex.: Participante P001"></label><label>Empresa<input id="company" type="text" maxlength="110" autocomplete="off" placeholder="Ex.: Empresa demonstrativa"></label><label>Cargo ou área<input id="job" type="text" maxlength="110" autocomplete="off" placeholder="Ex.: Assistente Administrativo"></label></div></div><label class="ack"><input type="checkbox" id="ack"><span>Li e compreendi o caráter experimental e o processamento local desta demonstração.</span></label>
 <div class="actions"><button id="begin" disabled>Começar questionário</button></div></section>
-<section class="card" id="quiz"><div class="topline"><span id="count" class="small"></span><span class="tag">Versão 1.3</span></div><div class="progress" aria-label="Progresso" style="margin:12px 0"><div id="progress" style="width:0"></div></div><div id="question" class="question"></div><div id="choices" class="choices"></div><div class="actions"><button id="prev" class="secondary">Anterior</button><button id="next" disabled>Próxima</button></div><p class="small">Escala: Nunca ou quase nunca · Raramente · Às vezes · Frequentemente · Sempre ou quase sempre.</p></section>
+<section class="card" id="quiz"><div class="topline"><span id="count" class="small"></span><span class="tag">Versão 1.5</span></div><div class="progress" aria-label="Progresso" style="margin:12px 0"><div id="progress" style="width:0"></div></div><div id="question" class="question"></div><div id="choices" class="choices"></div><div class="actions"><button id="prev" class="secondary">Anterior</button><button id="next" disabled>Próxima</button></div><p class="small">Escala: Nunca ou quase nunca · Raramente · Às vezes · Frequentemente · Sempre ou quase sempre.</p></section>
 <section id="results" class="card"><span class="tag">Relatório experimental</span><h2>Mapa de Preferências Comportamentais</h2><p id="report-meta"></p>
-<div id="bars"></div><h3 id="profile-heading">Classificação descritiva do perfil</h3><p id="interpret"></p><h3>Leitura das quatro dimensões</h3><div id="dimension-readings"></div><h3>Integração comportamental</h3><p id="integration"></p><h3>Plano de Desenvolvimento Individual — opcional</h3><p class="small">Sugestões para reflexão e conversa com o gestor; não representam necessidades de desenvolvimento identificadas clinicamente.</p><div id="pdi"></div><div class="notice"><strong>Limites:</strong> os índices de 0 a 100 são transformações aritméticas de respostas de autorrelato, não percentis nem probabilidades. Pontuações menores não significam deficiência ou inadequação profissional. Não usar os resultados isoladamente para contratação, promoção ou desligamento.</div>
+<div id="bars"></div><h3>Síntese executiva</h3><p id="executive"></p><h3 id="profile-heading">Classificação descritiva do perfil</h3><p id="interpret"></p><h3>Leitura das quatro dimensões</h3><div id="dimension-readings"></div><h3>Integração comportamental</h3><p id="integration"></p><h3>Orientações ao gestor</h3><p id="management"></p><h3>Plano de Desenvolvimento Individual — orientações priorizadas</h3><p class="small">Ações opcionais baseadas nas respostas e em oportunidades de acompanhamento, não em déficits demonstrados. Defina as metas em conjunto com o participante.</p><div id="pdi"></div><div class="notice"><strong>Limites:</strong> os índices de 0 a 100 são transformações aritméticas de respostas de autorrelato, não percentis nem probabilidades. Pontuações menores não significam deficiência ou inadequação profissional. Não usar os resultados isoladamente para contratação, promoção ou desligamento.</div>
 
 <div class="actions"><button onclick="window.print()">Imprimir / Salvar em PDF</button><button id="export" class="secondary">Exportar resultados (JSON)</button><button id="restart" class="secondary">Nova aplicação</button></div></section>
-<p class="footer">Sant’Anna 360 · MAP 360° · Instrumento piloto PM-MAP360-001 · Interface v1.3 · Uso experimental</p></main>
+<p class="footer">Sant’Anna 360 · MAP 360° · Instrumento piloto PM-MAP360-001 · Interface v1.5 · Uso experimental</p></main>
 <script src="js/map360-motor-v1_3.js"></script>
 <script>
 'use strict';
@@ -39,6 +50,64 @@ A:{summary:'A pontuação sintetiza a frequência autorrelatada de iniciativa, d
 E:{summary:'A pontuação sintetiza a frequência autorrelatada de organização, planejamento, registro e conferência de informações.',question:'Quais ferramentas ou rotinas de organização melhoram sua qualidade de entrega?',action:'Testar um checklist de planejamento e conferência em uma atividade recorrente.',measure:'Comparar retrabalho e cumprimento de etapas antes e após quatro semanas.'},
 X:{summary:'A pontuação sintetiza a frequência autorrelatada de comunicação, escuta, alinhamento e cooperação no trabalho.',question:'Como você costuma verificar se outra pessoa compreendeu as informações compartilhadas?',action:'Realizar alinhamentos breves com colegas envolvidos em uma entrega compartilhada.',measure:'Registrar acordos e verificar se houve dúvidas ou retrabalho ao final do ciclo.'}
 };
+
+/* Biblioteca autoral de interpretações exploratórias v1.5.
+   Nenhuma conclusão prevê desempenho ou define adequação profissional. */
+const combinedInterpretations={
+  'A,C':'Ação e Constância reúnem relatos de iniciativa com continuidade das entregas. O equilíbrio entre começar atividades e sustentá-las ao longo do tempo merece observação nas situações reais de trabalho.',
+  'C,E':'Constância e Estrutura reúnem relatos de regularidade e organização. Em atividades com rotinas e registros, essa combinação pode representar uma preferência de trabalho; convém confirmar como a pessoa reage a mudanças.',
+  'C,X':'Constância e Conexão reúnem relatos de continuidade e colaboração. Vale observar como a pessoa mantém compromissos enquanto alinha entregas e expectativas com outras pessoas.',
+  'A,E':'Ação e Estrutura reúnem relatos de iniciativa e planejamento. A combinação pode se manifestar em organizar etapas e executar soluções; verifique como ocorre o equilíbrio entre agilidade e conferência.',
+  'A,X':'Ação e Conexão reúnem relatos de iniciativa e interação. É útil observar como a pessoa mobiliza conversas, escuta diferentes opiniões e transforma acordos em atividades concretas.',
+  'E,X':'Estrutura e Conexão reúnem relatos de organização e compartilhamento de informações. A combinação pode favorecer a preferência por processos claros e alinhamento entre pessoas; verifique como se comunica diante de divergências e prazos.'
+};
+const developmentActions={
+  C:[
+   ['Estabelecer um registro simples de entregas semanais e revisá-lo com o gestor.','Conferir entregas registradas em quatro semanas.'],
+   ['Dividir uma atividade extensa em marcos curtos e acompanhar a conclusão.','Registrar marcos concluídos em quatro semanas.'],
+   ['Definir lembretes para o acompanhamento de uma tarefa prolongada.','Verificar a execução dos acompanhamentos planejados.'],
+   ['Formalizar compromissos e prazos em uma lista de acompanhamento.','Revisar o cumprimento dos combinados ao final do mês.'],
+   ['Reservar um horário fixo para revisar rotinas essenciais.','Registrar a regularidade das revisões ao longo de quatro semanas.'],
+   ['Acompanhar o avanço de uma atividade cujos resultados demoram.','Documentar obstáculos e progressos em quatro revisões.']
+  ],
+  A:[
+   ['Escolher uma pequena tarefa e iniciar sua execução com uma data definida.','Registrar a data de início e a conclusão da tarefa.'],
+   ['Listar duas alternativas de solução para um problema recorrente.','Apresentar as alternativas e a decisão tomada.'],
+   ['Definir limites de autonomia e praticar uma decisão de baixo risco.','Registrar uma decisão e sua justificativa.'],
+   ['Transformar um objetivo em três entregas com prazos.','Verificar quantas entregas foram concluídas no prazo.'],
+   ['Testar uma alternativa simples para contornar um obstáculo identificado.','Registrar o obstáculo, a ação e o resultado observado.'],
+   ['Identificar uma atividade parada e propor seu próximo passo.','Registrar o encaminhamento acordado com o responsável.']
+  ],
+  E:[
+   ['Criar um roteiro de etapas para uma atividade com várias fases.','Verificar as etapas planejadas e concluídas.'],
+   ['Utilizar uma lista curta de conferência antes de uma entrega.','Observar ocorrências de retrabalho em quatro semanas.'],
+   ['Testar uma ferramenta de registro ou checklist de tarefas.','Registrar o uso da ferramenta por quatro semanas.'],
+   ['Definir prazos intermediários para uma atividade complexa.','Acompanhar marcos e eventuais atrasos.'],
+   ['Organizar uma pasta ou repositório de documentos por critérios definidos.','Verificar tempo de localização de arquivos em situação prática.'],
+   ['Formalizar critérios de qualidade para uma entrega recorrente.','Verificar a aplicação dos critérios em quatro entregas.']
+  ],
+  X:[
+   ['Definir um resumo semanal das informações relevantes para a equipe.','Verificar se as pessoas envolvidas receberam o resumo.'],
+   ['Praticar a escuta e resumir o entendimento em uma conversa de alinhamento.','Registrar eventuais dúvidas esclarecidas.'],
+   ['Confirmar responsabilidades e prazos ao final de reuniões.','Revisar os combinados em duas reuniões.'],
+   ['Participar de uma solução conjunta com papéis definidos.','Registrar a contribuição e o encaminhamento acordado.'],
+   ['Experimentar mensagens com objetivo, contexto e próximo passo explícitos.','Confirmar entendimento em três comunicações.'],
+   ['Realizar um breve alinhamento com colega de outra atividade.','Registrar acordos e dúvidas resolvidas.']
+  ]
+};
+function buildTailoredPlan(principais,allAnswers){
+  const planos=[];
+  for(const d of principais.slice(0,2)){
+    const direct=items.map((item,i)=>({...item,nota:allAnswers[i]})).filter(item=>item.dim===d&&Number(item.id.slice(1))<=6);
+    direct.sort((a,b)=>a.nota-b.nota||Number(a.id.slice(1))-Number(b.id.slice(1)));
+    const selected=direct[0],idx=Number(selected.id.slice(1))-1;
+    const action=developmentActions[d][idx];
+    const note=selected.nota<=2?'Comportamento relatado com menor frequência neste questionário.':'Oportunidade de reflexão escolhida entre os comportamentos da dimensão.';
+    planos.push({dim:names[d],foco:observables[d].positive[idx],acao:action[0],indicador:action[1],nota:note});
+  }
+  return planos;
+}
+
 let lastPayload=null;
 const answers=Array(items.length).fill(null);let index=0;
 const el=id=>document.getElementById(id);
@@ -76,8 +145,22 @@ for(const k of ['C','A','E','X']){
 el('integration').textContent=near.length===2
   ?'A combinação '+near.map(k=>names[k]).join(' + ')+' é a principal leitura descritiva nesta aplicação. Ela reúne relatos de comportamentos relativos a '+near.map(k=>observables[k].positive[0]).join(' e ')+'. As demais dimensões complementam o mapa.'
   :near.length===1?'A dimensão '+names[near[0]]+' está relativamente destacada, mas as outras três também compõem as preferências relatadas.':'As dimensões apresentam resultados próximos; por isso a leitura integrada tem prioridade sobre qualquer rótulo individual.';
-const pdi=el('pdi');pdi.replaceChildren();const tb=document.createElement('table');tb.className='pdi-table';const head=document.createElement('thead');const hr=document.createElement('tr');for(const label of ['Dimensão','Experimento de desenvolvimento','Indicador de acompanhamento']){const th=document.createElement('th');th.textContent=label;hr.append(th);}head.append(hr);tb.append(head);const body=document.createElement('tbody');for(const k of ['C','A','E','X']){const tr=document.createElement('tr');for(const label of [names[k],definitions[k].action,definitions[k].measure]){const td=document.createElement('td');td.textContent=label;tr.append(td);}body.append(tr);}tb.append(body);pdi.append(tb);
-lastPayload={instrument:'MAP 360°',instrumentVersion:'1.0',interfaceVersion:'1.3',calculo:calculated,status:'piloto_nao_validado',generatedAt:new Date().toISOString(),identification,answers:items.map((item,i)=>({id:item.id,value:answers[i]})),rawScores:sums,indices0to100:values,classification,dimensionsHighlighted:near,classificationRule:'até 6,25 pontos do índice mais alto; 1=predominante, 2=combinado, 3-4=multidimensional; experimental',notes:'Questionário experimental de autorrelato. Não é diagnóstico nem critério eliminatório.'};el('quiz').style.display='none';el('results').style.display='block';window.scrollTo(0,0);}
+const high=calculated.dimensoes.find(d=>names[near[0]]===d.nome);
+const summaryParts=near.map(k=>names[k]);
+el('executive').textContent='Nesta aplicação experimental, '+(near.length===1?'a dimensão de maior destaque é ':near.length===2?'as dimensões mais evidenciadas são ':'as pontuações são próximas entre várias dimensões, incluindo ')+summaryParts.join(' e ')+'. As quatro dimensões descrevem frequências de comportamentos relatados e não capacidades comprovadas. A leitura considera as respostas específicas e o contexto profissional.';
+const pair=near.length===2?[...near].sort().join(','):null;
+if(pair&&combinedInterpretations[pair]) el('integration').textContent=combinedInterpretations[pair]+' As demais dimensões complementam o mapa, sem representar ausência de características.';
+el('management').textContent=near.length===2?'Na devolutiva, considere tarefas que envolvam '+observables[near[0]].positive[0]+' e '+observables[near[1]].positive[0]+'. Combine observação de entregas, exemplos de situações reais e diálogo sobre preferências. Não use o perfil como filtro automático de contratação.':'Utilize os resultados para conversar sobre situações reais de trabalho, compreender condições que favoreçam as entregas e pactuar pequenas ações de desenvolvimento. Evite conclusões sobre aptidão ou desempenho apenas com este questionário.';
+const plans=buildTailoredPlan(near,answers);
+const pdi=el('pdi');pdi.replaceChildren();
+const tb=document.createElement('table');tb.className='pdi-table';
+const head=document.createElement('thead'),hr=document.createElement('tr');
+for(const label of ['Dimensão e foco','Experimento sugerido','Indicador de acompanhamento']){const th=document.createElement('th');th.textContent=label;hr.append(th);}
+head.append(hr);tb.append(head);
+const body=document.createElement('tbody');
+for(const plan of plans){const tr=document.createElement('tr');for(const value of [plan.dim+' — '+plan.foco+'. '+plan.nota,plan.acao,plan.indicador]){const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
+tb.append(body);pdi.append(tb);
+lastPayload={instrument:'MAP 360°',instrumentVersion:'1.0',interfaceVersion:'1.5',calculo:calculated,status:'piloto_nao_validado',generatedAt:new Date().toISOString(),identification,answers:items.map((item,i)=>({id:item.id,value:answers[i]})),rawScores:sums,indices0to100:values,classification,dimensionsHighlighted:near,planoPersonalizado:plans,classificationRule:'até 6,25 pontos do índice mais alto; 1=predominante, 2=combinado, 3-4=multidimensional; experimental',notes:'Questionário experimental de autorrelato. Não é diagnóstico nem critério eliminatório.'};el('quiz').style.display='none';el('results').style.display='block';window.scrollTo(0,0);}
 el('export').addEventListener('click',()=>{if(!lastPayload)return;const file=new Blob([JSON.stringify(lastPayload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(file);const link=document.createElement('a');link.href=url;link.download='MAP360_resultado_piloto.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 el('restart').addEventListener('click',()=>{lastPayload=null;el('person').value='';el('company').value='';el('job').value='';answers.fill(null);index=0;el('results').style.display='none';el('start').style.display='block';el('ack').checked=false;el('begin').disabled=true;window.scrollTo(0,0);});
 </script></body></html>
