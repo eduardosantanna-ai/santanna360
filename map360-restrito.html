@@ -120,12 +120,14 @@ async function loadResult(assessmentId,companyId){
  if(companyId!==activeId||!validUuid(assessmentId)||!validUuid(companyId))return;
  const selected=evaluations.find(e=>e.id===assessmentId&&e.empresa_id===companyId);
  if(!selected){status('Avaliação não autorizada.','error');return;}
+ if(!selected.consentimento_registrado){status('Avaliação sem registro de consentimento nesta tabela. Relatório não exibido nesta etapa.','error');return;}
  byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
  status('Conferindo respostas da avaliação...');
  try{
   const {data,error}=await client.from('map_respostas').select('avaliacao_id,empresa_id,pergunta_id,nota')
       .eq('empresa_id',companyId).eq('avaliacao_id',assessmentId).limit(100);
   if(error)throw error;
+  if(companyId!==activeId)return; // Ignora respostas de outra seleção após troca rápida de empresa.
   const rows=data||[];
   const lookup=new Map(questions.map(q=>[q.id,q.codigo]));
   const respostas={};
