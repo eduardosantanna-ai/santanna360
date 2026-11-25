@@ -64,10 +64,6 @@ view('inicio');
     const { data: perfil, error: profileError } = await client.from('perfis')
       .select('ativo,administrador').eq('id',userData.user.id).maybeSingle();
     if (profileError || !perfil?.ativo || !perfil?.administrador) return redirecionar();
-    const aviso = document.createElement('div');
-    aviso.className = 'notice';
-    aviso.textContent = 'MODO DEMONSTRAÇÃO ADMINISTRATIVA: os dados deste painel ainda são salvos apenas neste navegador, não no Supabase. Não cadastre informações reais ou confidenciais de clientes.';
-    document.querySelector('.shell').prepend(aviso);
     const sair = document.createElement('button');
     sair.textContent = 'Sair da conta';
     sair.addEventListener('click', async () => {
