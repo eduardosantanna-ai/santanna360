@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const fn=fs.readFileSync('supabase/functions/contato-site/index.ts','utf8');
+const sql=fs.readFileSync('supabase/migrations/20261125_contato_limite.sql','utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/);assert(script,'script inexistente');new vm.Script(script[1]);
+assert(html.includes('id="contactStatus"'),'status de envio ausente');
+assert(html.includes('Enviar mensagem'),'botão de envio ausente');
+assert(html.includes('contato-site')&&html.includes('await fetch(ENDPOINT'),'integração ausente');
+assert(html.includes('if(!response.ok||data.accepted!==true)'),'não deve confirmar envio sem resposta');
+assert(!html.includes("location.href='mailto:"),'fluxo antigo encontrado');
+assert(!html.includes('RESEND_API_KEY')&&!html.includes('SUPABASE_SERVICE_ROLE_KEY'),'segredo exposto no HTML');
+assert(fn.includes('RESEND_API_KEY')&&fn.includes('api.resend.com/emails'),'provedor não integrado');
+assert(fn.includes('s360_contato_permitir'),'rate limiting ausente');
+assert(fn.includes('request.headers.get("origin")!==allowedOrigin'),'validação de origem ausente');
+assert(sql.includes('revoke all on public.s360_contato_limites'),'acesso à tabela não protegido');
+assert(sql.includes('revoke all on function public.s360_contato_permitir'),'RPC pública');
+console.log('Formulário e integração de e-mail: testes estáticos aprovados. Nenhuma mensagem real foi enviada.');
