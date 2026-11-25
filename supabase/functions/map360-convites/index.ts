@@ -1,10 +1,11 @@
 // Supabase Edge Function: map360-convites (Deno).
 // Deploy with --no-verify-jwt; authorization is enforced per action below.
-// Requires SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY.
+// Requires SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY and MAP360_RATE_SALT.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const BASE = Deno.env.get("SUPABASE_URL") || "";
 const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const RATE_SALT = Deno.env.get("MAP360_RATE_SALT") || "";
 const service = createClient(BASE, SERVICE, {auth:{persistSession:false,autoRefreshToken:false}});
 const encoder = new TextEncoder();
 const cors = {
@@ -14,6 +15,7 @@ const cors = {
   "Cache-Control": "no-store",
   "Referrer-Policy": "no-referrer",
   "Content-Security-Policy": "default-src 'none'",
+ "Vary": "Origin",
 };
 function reply(status:number, body:unknown){return new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json; charset=utf-8"}});}
 function fail(message:string,status=400){return reply(status,{error:message});}
@@ -22,6 +24,13 @@ async function sha256(token:string){const digest=await crypto.subtle.digest("SHA
 function isToken(t:unknown):t is string{return typeof t==="string"&&/^[A-Za-z0-9_-]{43}$/.test(t);}
 function isUuid(x:unknown){return typeof x==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x);}
 function plain(x:unknown,len=120){return typeof x==="string"?x.trim().slice(0,len):"";}
+async function permitted(req:Request,action:string,identity:string,limit:number){
+  const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if(!ip||!RATE_SALT)return false;
+  const key=await sha256(RATE_SALT+":"+action+":"+ip+":"+identity);
+  const result=await service.rpc("map360_convite_permitir",{p_chave:key,p_limite:limit});
+  return !result.error&&result.data===true;
+}
 async function authorizeAdmin(req:Request){
   const match=(req.headers.get("authorization")||"").match(/^Bearer (.+)$/i);
   if(!match)return null;
@@ -35,7 +44,8 @@ async function authorizeAdmin(req:Request){
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors});
  if(req.method!=="POST")return fail("Método indisponível",405);
- if(!BASE||!ANON||!SERVICE)return fail("Serviço não configurado",503);
+ if(req.headers.get("origin")!=="https://www.santanna360.com.br")return fail("Origem não permitida",403);
+ if(!BASE||!ANON||!SERVICE||!RATE_SALT)return fail("Serviço não configurado",503);
  let body:Record<string,unknown>;
  try{if(Number(req.headers.get("content-length")||0)>20000)return fail("Requisição muito grande",413);body=await req.json();if(!body||Array.isArray(body)||typeof body!=="object")return fail("Dados inválidos");}
  catch{return fail("JSON inválido");}
@@ -43,6 +53,7 @@ Deno.serve(async(req)=>{
  try{
   if(action==="create"){
    const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
+   if(!await permitted(req,"create",admin.id,12))return fail("Limite de convites atingido. Tente mais tarde.",429);
    if(!isUuid(body.empresa_id))return fail("Empresa inválida");
    const empresa=await admin.client.from("empresas").select("id").eq("id",body.empresa_id).maybeSingle();
    if(empresa.error||!empresa.data)return fail("Empresa sem permissão de acesso",403);
@@ -67,9 +78,21 @@ Deno.serve(async(req)=>{
    return reply(201,{id:insert.data.id,expira_em:insert.data.expira_em,
     link:"https://www.santanna360.com.br/map360-participar.html#token="+token});
   }
+  if(action==="revoke"){
+   const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
+   if(!await permitted(req,"revoke",admin.id,30))return fail("Limite de solicitações atingido",429);
+   if(!isUuid(body.id)||!isUuid(body.empresa_id))return fail("Solicitação inválida");
+   const empresa=await admin.client.from("empresas").select("id").eq("id",body.empresa_id).maybeSingle();
+   if(empresa.error||!empresa.data)return fail("Empresa sem permissão de acesso",403);
+   const result=await service.from("map_convites").update({estado:"revogado"})
+    .eq("id",body.id).eq("empresa_id",body.empresa_id).eq("estado","pendente").select("id");
+   if(result.error||result.data?.length!==1)return fail("Convite não encontrado ou já encerrado",404);
+   return reply(200,{revogado:true});
+  }
   if(action==="view"||action==="submit"){
    if(!isToken(body.token))return fail("Link inválido ou incompleto",404);
    const hash=await sha256(body.token);
+   if(!await permitted(req,action,hash,action==="view"?60:10))return fail("Muitas tentativas. Tente novamente mais tarde.",429);
    const c=await service.from("map_convites").select("id,participante_nome,finalidade,estado,expira_em")
      .eq("token_hash",hash).maybeSingle();
    if(c.error||!c.data||c.data.estado!=="pendente"||new Date(c.data.expira_em)<=new Date())return fail("Convite expirado, utilizado ou indisponível",404);
