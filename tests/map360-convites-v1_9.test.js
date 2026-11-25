@@ -17,4 +17,8 @@ assert(fn.includes('map360_concluir_convite')&&migration.includes('for update'),
 assert(migration.includes('revoke all on public.map_convites from anon, authenticated'),'Acesso direto restrito');
 assert(migration.includes('revoke all on function public.map360_concluir_convite'),'RPC restrita');
 assert(!participant.includes('SERVICE_ROLE_KEY')&&!admin.includes('SERVICE_ROLE_KEY'),'Sem segredo de service_role no HTML');
-console.log('MAP 360° v1.9: sintaxe e invariantes estáticos aprovados.');
+assert(fn.includes('action==="revoke"')&&fn.includes('.eq("empresa_id",body.empresa_id)'),'Revogação deve estar vinculada à empresa');
+assert(fn.includes('MAP360_RATE_SALT')&&fn.includes('map360_convite_permitir'),'Rate limit obrigatório');
+assert(fn.includes('req.headers.get("origin")'),'Verificação de origem');
+assert(migration.includes('revoke all on public.map360_convite_limites')&&migration.includes('revoke all on function public.map360_convite_permitir'),'Rate limit restrito ao servidor');
+console.log('MAP 360° v1.9: sintaxe frontend e invariantes estáticos de segurança aprovados.');
