@@ -1,0 +1,20 @@
+name: MAP360 convites v1.9 - teste de codigo
+on:
+  pull_request:
+    paths:
+      - 'map360-convites-homologacao.html'
+      - 'map360-participar.html'
+      - 'supabase/**'
+      - 'tests/map360-convites-v1_9.test.js'
+      - '.github/workflows/map360-convites-v1_9.yml'
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/map360-convites-v1_9.test.js
