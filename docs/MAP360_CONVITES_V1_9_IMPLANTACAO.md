@@ -12,9 +12,9 @@
 1. Revisar os tipos, colunas e constraints reais de empresas, perfis, map_avaliacoes, map_respostas e map_perguntas no Supabase.
 2. Aprovar o aviso de privacidade, finalidade, base legal, retenção de dados e canais de contato. O texto atual é provisório.
 3. Aplicar a migração PRIMEIRO no ambiente de homologação.
-4. Configurar SUPABASE_URL, SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY como segredos da Edge Function — nunca no HTML.
+4. Configurar SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY e MAP360_RATE_SALT (segredo aleatório forte) como segredos da Edge Function — nunca no HTML.
 5. Implantar a função map360-convites no Supabase. A validação de JWT do administrador ocorre no backend, e participante usa token opaco.
-6. Configurar rate limits, auditoria e revogação de convites; validar contra enumeração e abuso.
+6. Testar o limite de tentativas incluído na migração e na Edge Function (criação, consulta, envio e revogação). Implantar controles adicionais de borda, observabilidade e auditoria de eventos. Verificar o cabeçalho IP confiável fornecido pelo gateway.
 7. Testar duas empresas e usuários distintos: RLS, create, view, submit, expiração, duplicidade e acesso negado entre empresas.
 8. Publicar interface somente depois da aprovação. Enquanto isso, manter homologação atual intacta.
 
@@ -24,8 +24,11 @@ Administrador autenticado seleciona empresa e participante, confirma geração; 
 ## Pendências
 - Verificar migração contra esquema real de produção.
 - Finalizar política de privacidade e critérios de retenção.
-- Rate limiting em create/view/submit e revogação administrativa.
+- Interface administrativa para listar convites por empresa e permitir a revogação; endpoint revoke já preparado.
+- Validar o mecanismo de rate limiting com o cabeçalho de IP real do gateway e configurar mitigação para abuso distribuído.
 - Testes funcionais e de segurança com duas empresas.
-- Implantar Supabase Edge Function e conectar domínio.
+- Implantar a migração e a Supabase Edge Function e conectar domínio.
+- Testar a correspondência dos tipos e constraints do banco real com a migração (sem acesso ao projeto nesta etapa).
+- Política de contatos e descarte de dados pessoais em conformidade com a LGPD.
 
 **MAP 360° permanece um instrumento experimental, não validado para contratação ou decisões automatizadas.**
