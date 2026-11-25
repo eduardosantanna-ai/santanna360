@@ -85,3 +85,37 @@ revoke all on function public.map360_concluir_convite(text,jsonb,boolean) from p
 grant execute on function public.map360_concluir_convite(text,jsonb,boolean) to service_role;
 comment on function public.map360_concluir_convite(text,jsonb,boolean)
 is 'Consome convite único e grava avaliação/respostas em uma transação; somente service_role deve chamar.';
+
+-- Limite básico de solicitações por origem/ação, adicional a proteções de borda.
+create table if not exists public.map360_convite_limites (
+ chave text primary key check (length(chave)=64),
+ janela_inicio timestamptz not null default now(),
+ tentativas integer not null default 1 check (tentativas>=1)
+);
+alter table public.map360_convite_limites enable row level security;
+revoke all on public.map360_convite_limites from public, anon, authenticated;
+grant all on public.map360_convite_limites to service_role;
+
+create or replace function public.map360_convite_permitir(
+ p_chave text, p_limite integer
+) returns boolean
+language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_tentativas integer;
+begin
+ if p_chave is null or p_chave !~ '^[0-9a-f]{64}$' or p_limite not between 1 and 100 then
+   return false;
+ end if;
+ insert into public.map360_convite_limites(chave,janela_inicio,tentativas)
+ values(p_chave,now(),1)
+ on conflict(chave) do update
+ set janela_inicio=case
+   when map360_convite_limites.janela_inicio < now()-interval '1 hour'
+   then now() else map360_convite_limites.janela_inicio end,
+ tentativas=case
+   when map360_convite_limites.janela_inicio < now()-interval '1 hour'
+   then 1 else map360_convite_limites.tentativas+1 end
+ returning tentativas into v_tentativas;
+ return v_tentativas<=p_limite;
+end $$;
+revoke all on function public.map360_convite_permitir(text,integer) from public,anon,authenticated;
+grant execute on function public.map360_convite_permitir(text,integer) to service_role;
