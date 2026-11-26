@@ -26,12 +26,12 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 .map-analytic-table th{background:#edf2f6}
 #report p,#report li,#report td{text-align:justify;text-justify:inter-word;hyphens:auto;overflow-wrap:break-word}
 @media print{
- @page{size:A4;margin:16mm 14mm}
+ @page{size:A4;margin:11mm 12mm}
  header,.no-print,#summary{display:none!important}
  body{background:white}main{max-width:none;margin:0;padding:0}
  #report{display:block!important}
- .map-analytic-section{break-before:page;page-break-before:always;break-inside:auto;border:0;padding:0;margin:0}
- .map-analytic-section:first-of-type{break-before:auto;page-break-before:auto}
+ .map-analytic-section{break-before:auto;page-break-before:auto;break-inside:auto;border:0;padding:0;margin:0 0 10px}
+ .map-analytic-section p{font-size:13.5px;line-height:1.42;margin:4px 0 6px}.map-analytic-section h2{font-size:17px;margin:8px 0 3px}.map-analytic-section li{font-size:13.5px;margin:2px 0}.map-analytic-table td,.map-analytic-table th{padding:5px 7px;font-size:12.5px}
  .map-analytic-section h2{break-after:avoid;page-break-after:avoid}
  .map-analytic-table tr,.map-analytic-score{break-inside:avoid;page-break-inside:avoid}
  #report p,#report li,#report td{orphans:3;widows:3;text-align:justify}
@@ -50,7 +50,7 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 </div>
 <div class="actions"><button id="refresh" type="button">Atualizar</button><button id="logout" type="button">Sair</button></div>
 </section>
-<section id="summary" class="card hidden"><h2>Resultado consultado</h2><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button></section>
+<section id="summary" class="card hidden"><h2>Relatório completo para devolutiva</h2><p id="participantHeader"></p><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button></section>
 <div id="report" class="hidden"></div>
 <p class="no-print" style="font-size:12px;color:#627387">Este módulo depende de autenticação Supabase e das políticas RLS já existentes. A página HTML não é uma barreira de acesso; os dados devem permanecer protegidos no banco.</p>
 </main>
@@ -62,6 +62,9 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 const byId=id=>document.getElementById(id);
 const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
 let user=null,companies=[],evaluations=[],questions=[],activeId=null;
+const initialParams=new URLSearchParams(location.search);
+const requestedCompany=initialParams.get('empresa'),requestedEvaluation=initialParams.get('avaliacao');
+let initialOpened=false;
 function status(s,kind=''){const p=byId('status');p.textContent=s;p.className='alert '+kind;}
 function clear(n){n.replaceChildren();}
 function cell(value){const e=document.createElement('td');e.textContent=value===null||value===undefined?'—':String(value);return e;}
@@ -96,6 +99,7 @@ async function init(){
   }
   if(questions.length!==32||codes.size!==32)throw Error('É necessário haver exatamente 32 perguntas ativas.');
   byId('app').classList.remove('hidden');
+  if(validUuid(requestedCompany)&&companies.some(c=>c.id===requestedCompany))byId('empresa').value=requestedCompany;
   await loadCompany();
  }catch(e){document.body.classList.add('ready');status('Consulta indisponível: '+e.message,'error');}
 }
@@ -118,6 +122,11 @@ async function loadCompany(){
   button.onclick=()=>loadResult(ev.id,id);td.append(button);tr.append(td);byId('avaliacoes').append(tr);
  }
  status('Avaliações carregadas em modo de consulta.','ok');
+ if(!initialOpened&&validUuid(requestedEvaluation)&&id===requestedCompany){
+  initialOpened=true;
+  if(evaluations.some(e=>e.id===requestedEvaluation&&e.empresa_id===id))await loadResult(requestedEvaluation,id);
+  else status('A avaliação indicada não está autorizada ou não aparece entre as 100 mais recentes.','error');
+ }
 }
 async function loadResult(assessmentId,companyId){
  if(companyId!==activeId||!validUuid(assessmentId)||!validUuid(companyId))return;
@@ -145,6 +154,10 @@ async function loadResult(assessmentId,companyId){
   }
   const resultado=window.MAP360Motor.calcular(respostas);
   window.MAP360Analitico.render(byId('report'),{calculo:resultado,respostas});
+  const details=document.createElement('p');details.className='map-analytic-kicker';
+  details.textContent='Participante: '+(selected.participante_nome||'Não informado')+' · Finalidade: '+(selected.finalidade||'—')+' · Registro: '+new Date(selected.criado_em).toLocaleDateString('pt-BR')+' · Documento experimental para devolutiva orientada.';
+  byId('report').prepend(details);
+  byId('participantHeader').textContent='Participante: '+(selected.participante_nome||'Não informado')+' · Empresa: '+(companies.find(c=>c.id===companyId)?.nome_fantasia||companies.find(c=>c.id===companyId)?.razao_social||'Empresa autorizada');
   byId('resultTitle').textContent=resultado.titulo;
   byId('resultExplain').textContent='Relatório experimental recuperado de uma avaliação autorizada. O resultado não foi salvo novamente e não representa diagnóstico psicológico ou critério automático para decisões seletivas.';
   byId('summary').classList.remove('hidden');byId('report').classList.remove('hidden');
