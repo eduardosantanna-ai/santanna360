@@ -22,7 +22,7 @@ assert(fn.includes('action==="revoke"')&&fn.includes('.eq("empresa_id",body.empr
 assert(fn.includes('MAP360_RATE_SALT')&&fn.includes('map360_convite_permitir'),'Rate limit obrigatório');
 assert(fn.includes('req.headers.get("origin")'),'Verificação de origem');
 assert(migration.includes('revoke all on public.map360_convite_limites')&&migration.includes('revoke all on function public.map360_convite_permitir'),'Rate limit restrito ao servidor');
-const restrictedJS=restricted.match(/<script>([\\s\\S]*?)<\\/script>/);assert(restrictedJS,'script da consulta inexistente');new vm.Script(restrictedJS[1]);
+const restrictedJS=restricted.split('<script>').pop().split('</script>')[0];assert(restrictedJS,'script da consulta inexistente');new vm.Script(restrictedJS);
 assert(fn.includes('action==="list"')&&fn.includes('.eq("empresa_id",body.empresa_id)'),'Lista deve filtrar empresa');
 assert(!fn.includes('select("*")'),'Não retornar todas as colunas dos convites');
 assert(admin.includes('refreshTracking')&&admin.includes('trackingRows'),'Painel de convites ausente');
