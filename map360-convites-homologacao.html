@@ -15,7 +15,7 @@ textarea{min-height:95px;resize:vertical}button{background:var(--navy);border:0;
 button.secondary{background:#e9eef3;color:var(--navy)}
 button:disabled{opacity:.5;cursor:not-allowed}
 .actions{display:flex;gap:10px;flex-wrap:wrap}.hidden{display:none!important}
-.small{font-size:13px;color:#586a7c}
+.small{font-size:13px;color:#586a7c}th,td{padding:10px;border-bottom:1px solid #dce3e8;vertical-align:top;font-size:14px}#tracking button{padding:7px 10px;font-size:13px;margin:3px}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;border-radius:8px}
 @media print{header,.no-print,form{display:none!important}body{background:white}.card{border:0}}
 </style></head>
@@ -42,6 +42,15 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;
 <pre id="previewText"></pre>
 <p class="warning"><strong>Uso individual:</strong> o link é exclusivo, expira no prazo indicado e deixa de funcionar após o envio das respostas. Compartilhe somente com o destinatário.</p>
 <div class="actions no-print"><button id="copy" type="button">Copiar texto do convite</button><button id="share" type="button">Abrir canal de envio</button><button id="hide" class="secondary" type="button">Fechar prévia</button></div>
+</section>
+<section class="card hidden" id="tracking">
+<h2>Acompanhamento de convites</h2>
+<p class="small">A consulta apresenta somente os convites vinculados à empresa escolhida e autorizada. O link individual não pode ser recuperado após a geração: para reenviar, será preciso criar outro convite.</p>
+<div class="actions"><button id="refreshTracking" type="button">Atualizar convites</button></div>
+<p class="status" id="trackingStatus" role="status" aria-live="polite">Selecione uma empresa para consultar os convites.</p>
+<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;text-align:left">
+<thead><tr><th>Participante</th><th>Finalidade</th><th>Criado em</th><th>Validade</th><th>Situação</th><th>Ações</th></tr></thead>
+<tbody id="trackingRows"></tbody></table></div>
 </section>
 <section class="card">
 <h2>Requisitos de segurança</h2>
@@ -71,6 +80,53 @@ el('canal').addEventListener('change',()=>{refreshContact();hidePreview();});
 function status(message,error=false){el('status').textContent=message;el('status').className='status'+(error?' error':' ok');}
 function validDate(x){if(!/^\d{4}-\d{2}-\d{2}$/.test(x))return false;const d=new Date(x+'T00:00:00');return !Number.isNaN(d.valueOf())&&d.toISOString().slice(0,10)===x;}
 function hidePreview(){textDraft='';lastLink='';lastContact='';el('previewText').textContent='';el('preview').classList.add('hidden');}
+const prettyDate=value=>{const d=new Date(value);return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR');};
+function trackingMessage(message,error=false){el('trackingStatus').textContent=message;el('trackingStatus').className='status'+(error?' error':' ok');}
+async function invoke(action,data={}){
+ const session=await client.auth.getSession(),jwt=session.data.session?.access_token;
+ if(!jwt)throw Error('Sua sessão expirou. Faça login novamente.');
+ const response=await fetch(EDGE,{method:'POST',cache:'no-store',mode:'cors',referrerPolicy:'no-referrer',
+ headers:{'Content-Type':'application/json','apikey':'sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC','Authorization':'Bearer '+jwt},
+ body:JSON.stringify({action,...data})});
+ const json=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(json.error||'Serviço de convites indisponível');
+ return json;
+}
+async function refreshTracking(){
+ const id=el('empresa').value;if(!companies.some(c=>c.id===id))return;
+ trackingMessage('Consultando convites autorizados...');
+ el('trackingRows').replaceChildren();
+ try{
+ const data=await invoke('list',{empresa_id:id});
+ if(el('empresa').value!==id)return;
+ const items=data.convites||[];
+ for(const c of items){
+  const tr=document.createElement('tr');
+  for(const value of [c.participante_nome,c.finalidade,prettyDate(c.criado_em),prettyDate(c.expira_em),c.estado_exibicao||c.estado]){
+   const td=document.createElement('td');td.textContent=value||'—';tr.append(td);
+  }
+  const actions=document.createElement('td');
+  if(c.estado_exibicao==='concluido'&&c.avaliacao_id){
+   const a=document.createElement('a');
+   a.href='map360-restrito.html?empresa='+encodeURIComponent(id)+'&avaliacao='+encodeURIComponent(c.avaliacao_id);
+   a.textContent='Relatório completo';actions.append(a);
+  }else if(c.estado_exibicao==='pendente'){
+   const revoke=document.createElement('button');revoke.type='button';revoke.textContent='Revogar';
+   revoke.onclick=async()=>{
+    if(!confirm('Revogar este convite? O participante não poderá mais utilizar o link.'))return;
+    revoke.disabled=true;
+    try{await invoke('revoke',{id:c.id,empresa_id:id});await refreshTracking();}
+    catch(e){trackingMessage('Falha na revogação: '+e.message,true);revoke.disabled=false;}
+   };actions.append(revoke);
+  }else{actions.textContent='—';}
+  tr.append(actions);el('trackingRows').append(tr);
+ }
+ trackingMessage(items.length+' convite(s) encontrado(s) (até '+(data.limite||200)+').');
+ }catch(e){trackingMessage('Não foi possível carregar convites: '+e.message,true);}
+}
+el('empresa').addEventListener('change',()=>{hidePreview();refreshTracking();});
+el('refreshTracking').addEventListener('click',refreshTracking);
+
 async function init(){
  try{
   if(!client)throw Error('Biblioteca de autenticação não disponível.');
@@ -83,7 +139,8 @@ async function init(){
   companies=e.data||[];
   for(const row of companies){const opt=document.createElement('option');opt.value=row.id;opt.textContent=row.nome_fantasia||row.razao_social||'Empresa';el('empresa').append(opt);}
   if(!companies.length)throw Error('Nenhuma empresa acessível.');
-  el('workspace').classList.remove('hidden');status('Acesso administrativo confirmado. Para gerar convites, o serviço seguro deve estar implantado.');
+  el('workspace').classList.remove('hidden');el('tracking').classList.remove('hidden');status('Acesso administrativo confirmado. Para gerar convites, o serviço seguro deve estar implantado.');
+  await refreshTracking();
  }catch(e){status('Acesso indisponível: '+e.message,true);}
  finally{document.body.classList.add('ready');}
 }
@@ -115,6 +172,7 @@ el('draftForm').addEventListener('submit',async event=>{
   textDraft='Olá, '+name+'!\n\nVocê recebeu um convite da '+companyName+' para responder ao MAP 360° da Sant’Anna 360, um instrumento experimental de preferências comportamentais com 32 afirmações.\nFinalidade: '+finalidadeLabel+'.\nPrazo: '+end.split('-').reverse().join('/')+'.\n\nAntes de responder, leia o aviso de finalidade e privacidade.\n\nAcesse seu link individual:\n'+lastLink+'\n\nNão compartilhe este link.';
   el('previewText').textContent=textDraft;el('preview').classList.remove('hidden');
   status('Link individual criado. Compartilhe-o somente com o participante.');
+  await refreshTracking();
  }catch(e){status('Não foi possível gerar o link: '+e.message,true);}
  finally{button.disabled=false;}
 });
