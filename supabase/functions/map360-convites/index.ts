@@ -78,6 +78,22 @@ Deno.serve(async(req)=>{
    return reply(201,{id:insert.data.id,expira_em:insert.data.expira_em,
     link:"https://www.santanna360.com.br/map360-participar.html#token="+token});
   }
+  if(action==="list"){
+   const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
+   if(!isUuid(body.empresa_id))return fail("Empresa inválida");
+   if(!await permitted(req,"list",admin.id,120))return fail("Limite de consultas atingido",429);
+   const empresa=await admin.client.from("empresas").select("id").eq("id",body.empresa_id).maybeSingle();
+   if(empresa.error||!empresa.data)return fail("Empresa sem permissão de acesso",403);
+   // Limita a listagem e não devolve token_hash nem contatos pessoais.
+   const result=await service.from("map_convites")
+    .select("id,empresa_id,participante_nome,finalidade,estado,criado_em,expira_em,concluido_em,avaliacao_id")
+    .eq("empresa_id",body.empresa_id).order("criado_em",{ascending:false}).limit(200);
+   if(result.error)throw Error("Não foi possível consultar convites");
+   const convites=(result.data||[]).map(c=>({
+    ...c,estado_exibicao:c.estado==="pendente"&&new Date(c.expira_em)<=new Date()?"expirado":c.estado
+   }));
+   return reply(200,{convites,limite:200});
+  }
   if(action==="revoke"){
    const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
    if(!await permitted(req,"revoke",admin.id,30))return fail("Limite de solicitações atingido",429);
