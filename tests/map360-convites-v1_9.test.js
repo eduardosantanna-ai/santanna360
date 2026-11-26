@@ -3,6 +3,7 @@ const admin=fs.readFileSync('map360-convites-homologacao.html','utf8');
 const participant=fs.readFileSync('map360-participar.html','utf8');
 const fn=fs.readFileSync('supabase/functions/map360-convites/index.ts','utf8');
 const migration=fs.readFileSync('supabase/migrations/20261125_map360_convites_v19.sql','utf8');
+const restricted=fs.readFileSync('map360-restrito.html','utf8');
 for(const [name,html] of [['admin',admin],['participant',participant]]){
  const js=html.match(/<script>([\s\S]*?)<\/script>/);assert(js,name+' script ausente');new vm.Script(js[1]);
 }
@@ -21,4 +22,12 @@ assert(fn.includes('action==="revoke"')&&fn.includes('.eq("empresa_id",body.empr
 assert(fn.includes('MAP360_RATE_SALT')&&fn.includes('map360_convite_permitir'),'Rate limit obrigatório');
 assert(fn.includes('req.headers.get("origin")'),'Verificação de origem');
 assert(migration.includes('revoke all on public.map360_convite_limites')&&migration.includes('revoke all on function public.map360_convite_permitir'),'Rate limit restrito ao servidor');
-console.log('MAP 360° v1.9: sintaxe frontend e invariantes estáticos de segurança aprovados.');
+const restrictedJS=restricted.match(/<script>([\\s\\S]*?)<\\/script>/);assert(restrictedJS,'script da consulta inexistente');new vm.Script(restrictedJS[1]);
+assert(fn.includes('action==="list"')&&fn.includes('.eq("empresa_id",body.empresa_id)'),'Lista deve filtrar empresa');
+assert(!fn.includes('select("*")'),'Não retornar todas as colunas dos convites');
+assert(admin.includes('refreshTracking')&&admin.includes('trackingRows'),'Painel de convites ausente');
+assert(admin.includes("invoke('revoke'")&&admin.includes("invoke('list'"),'Revogar/listar via endpoint');
+assert(admin.includes('Relatório completo')&&admin.includes('map360-restrito.html?empresa='),'Acesso ao relatório ausente');
+assert(restricted.includes('requestedCompany')&&restricted.includes('requestedEvaluation'),'Acesso contextual ao relatório ausente');
+assert(restricted.includes('participante_nome')&&restricted.includes('MAP360Analitico.render'),'Relatório completo não disponível');
+console.log('MAP 360° v1.9: testes de sintaxe, rastreio de convites e relatórios aprovados.');
