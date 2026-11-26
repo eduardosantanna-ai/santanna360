@@ -32,3 +32,13 @@ Administrador autenticado seleciona empresa e participante, confirma geração; 
 - Política de contatos e descarte de dados pessoais em conformidade com a LGPD.
 
 **MAP 360° permanece um instrumento experimental, não validado para contratação ou decisões automatizadas.**
+
+## Painel de acompanhamento e devolutiva (incluído na homologação)
+- A tela de convites permite selecionar empresa, listar até 200 convites por data e visualizar participante, finalidade, criação, vencimento e status (pendente, concluído, expirado ou revogado).
+- Gestor administrador pode solicitar revogação de convite pendente via endpoint autorizado; o link é invalidado sem expor token.
+- Para convites concluídos, o botão **Relatório completo** direciona à área restrita com empresa e avaliação selecionadas. A consulta exige autenticação, perfil administrador ativo, autorização de empresa via RLS e 32 respostas válidas.
+- O relatório analítico preserva as dez seções (incluindo quatro dimensões, PDI e orientações de devolutiva) e identifica o participante na impressão PDF.
+- Não há envio automático do relatório ao convidado; a devolutiva será conduzida pelo profissional responsável.
+- A lista não fornece link original novamente; o token só é apresentado no ato da geração por segurança.
+- O estado 'concluído' depende do registro transacional das 32 respostas.
+- Nenhum desses recursos está implantado no Supabase ou publicado para uso real até testes de homologação.
