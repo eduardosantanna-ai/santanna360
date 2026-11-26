@@ -4,6 +4,7 @@ on:
     paths:
       - 'map360-convites-homologacao.html'
       - 'map360-participar.html'
+      - 'map360-restrito.html'
       - 'supabase/**'
       - 'tests/map360-convites-v1_9.test.js'
       - '.github/workflows/map360-convites-v1_9.yml'
