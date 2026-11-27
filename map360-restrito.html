@@ -10,7 +10,8 @@ main{max-width:1000px;margin:25px auto;padding:0 18px 50px}
 .card{background:white;padding:22px;border:1px solid var(--border);border-radius:12px;margin-bottom:16px}
 h1{margin:0;font-size:27px}h2{font-size:21px}h3{font-size:18px}
 .alert{background:#fff4df;padding:13px 15px;border-radius:8px}.error{background:#ffe7e4;color:#8a2424}.ok{background:#e4f6ea;color:#175536}
-label{display:block;font-weight:600;margin-bottom:6px}select{padding:11px;border:1px solid #bfcbd5;border-radius:9px;max-width:100%;width:480px;font:inherit}
+label{display:block;font-weight:600;margin-bottom:6px}
+#feedback label{flex:1;min-width:160px}#feedback input,#feedback textarea,#feedback select{width:100%;font:inherit;border-radius:8px;border:1px solid #bfcbd5;padding:9px}#feedback textarea{resize:vertical}select{padding:11px;border:1px solid #bfcbd5;border-radius:9px;max-width:100%;width:480px;font:inherit}
 button{background:var(--navy);color:white;border:0;border-radius:8px;padding:9px 15px;font:inherit;cursor:pointer}
 button:disabled{opacity:.45;cursor:not-allowed}
 table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--border);text-align:left;padding:10px;font-size:14px}
@@ -52,6 +53,22 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 </section>
 <section id="summary" class="card hidden"><h2>Relatório completo para devolutiva</h2><p id="participantHeader"></p><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button></section>
 <div id="report" class="hidden"></div>
+<section id="feedback" class="card hidden no-print">
+<h2>Registro da devolutiva e acompanhamento do PDI</h2>
+<p>Registro administrativo vinculado exclusivamente à avaliação e à empresa selecionadas. A devolutiva deve ser discutida com o participante antes de registrar compromissos.</p>
+<p id="feedbackStatus" role="status" aria-live="polite" class="alert">Carregando devolutiva...</p>
+<form id="feedbackForm">
+<div class="actions">
+<label>Situação<select id="feedbackState"><option value="pendente">Pendente</option><option value="realizada">Devolutiva realizada</option><option value="acompanhamento">Em acompanhamento</option></select></label>
+<label>Data da devolutiva<input id="feedbackDate" type="date"></label>
+<label>Próxima revisão<input id="feedbackReview" type="date"></label>
+</div>
+<label>Responsável pela devolutiva<input id="feedbackOwner" type="text" maxlength="160" placeholder="Profissional responsável"></label>
+<label>Síntese da conversa<textarea id="feedbackNotes" maxlength="4000" rows="4" placeholder="Pontos discutidos, percepções e contexto profissional"></textarea></label>
+<label>Compromissos do PDI<textarea id="feedbackPdi" maxlength="4000" rows="4" placeholder="Ação pactuada, responsável, prazo e evidências de acompanhamento"></textarea></label>
+<p style="font-size:13px;color:#5d6876">Este registro não modifica as respostas do questionário nem o Relatório Analítico. A gravação requer autenticação e autorização no servidor.</p>
+<button id="feedbackSave" type="submit">Salvar devolutiva e PDI</button>
+</form></section>
 <p class="no-print" style="font-size:12px;color:#627387">Este módulo depende de autenticação Supabase e das políticas RLS já existentes. A página HTML não é uma barreira de acesso; os dados devem permanecer protegidos no banco.</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -61,16 +78,76 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 'use strict';
 const byId=id=>document.getElementById(id);
 const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
-let user=null,companies=[],evaluations=[],questions=[],activeId=null;
+let user=null,companies=[],evaluations=[],questions=[],activeId=null,selectedAssessment=null;
 const initialParams=new URLSearchParams(location.search);
 const requestedCompany=initialParams.get('empresa'),requestedEvaluation=initialParams.get('avaliacao');
 let initialOpened=false;
 function status(s,kind=''){const p=byId('status');p.textContent=s;p.className='alert '+kind;}
+
+const FEEDBACK_URL='https://okvikkifrsbovbppywgp.supabase.co/functions/v1/map360-convites';
+function feedbackStatus(text,error=false){
+ const p=byId('feedbackStatus');p.textContent=text;p.className='alert '+(error?'error':'ok');
+}
+async function feedbackRequest(action,payload){
+ const session=await client.auth.getSession(),token=session.data.session?.access_token;
+ if(!token)throw Error('Sua sessão expirou. Faça login novamente.');
+ const res=await fetch(FEEDBACK_URL,{method:'POST',mode:'cors',cache:'no-store',referrerPolicy:'no-referrer',
+ headers:{'Content-Type':'application/json','apikey':'sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC','Authorization':'Bearer '+token},
+ body:JSON.stringify({action,...payload})});
+ const json=await res.json().catch(()=>({}));
+ if(!res.ok)throw Error(json.error||'Serviço de devolutivas indisponível.');
+ return json;
+}
+function dateOrNull(x){return x||null;}
+async function loadFeedback(id,empresa){
+ byId('feedback').classList.remove('hidden');
+ byId('feedbackForm').reset();
+ byId('feedbackForm').querySelectorAll('input,textarea,select,button').forEach(e=>e.disabled=true);
+ feedbackStatus('Consultando registro da devolutiva...');
+ try{
+  const data=await feedbackRequest('get_feedback',{empresa_id:empresa,avaliacao_id:id});
+  if(!selectedAssessment||selectedAssessment.id!==id||activeId!==empresa)return;
+  const d=data.devolutiva;
+  if(d){
+   byId('feedbackState').value=d.status||'pendente';
+   byId('feedbackDate').value=d.realizado_em||'';
+   byId('feedbackReview').value=d.proxima_revisao||'';
+   byId('feedbackOwner').value=d.responsavel||'';
+   byId('feedbackNotes').value=d.sintese||'';
+   byId('feedbackPdi').value=d.compromissos||'';
+   feedbackStatus('Registro recuperado. Última atualização: '+new Date(d.atualizado_em).toLocaleString('pt-BR')+'.');
+  }else{feedbackStatus('Nenhuma devolutiva registrada. Você pode iniciar o acompanhamento.');}
+  byId('feedbackForm').querySelectorAll('input,textarea,select,button').forEach(e=>e.disabled=false);
+ }catch(e){feedbackStatus('Registro indisponível: '+e.message,true);}
+}
+byId('feedbackForm').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const current=selectedAssessment;
+ if(!current||activeId!==current.empresa_id)return;
+ const statusValue=byId('feedbackState').value,date=byId('feedbackDate').value,review=byId('feedbackReview').value;
+ if(statusValue!=='pendente'&&!date){feedbackStatus('Informe a data da devolutiva para marcar como realizada ou em acompanhamento.',true);return;}
+ if(date&&review&&review<date){feedbackStatus('A próxima revisão não pode ser anterior à devolutiva.',true);return;}
+ if(!confirm('Salvar o registro da devolutiva e os compromissos do PDI para este participante?'))return;
+ const submit=byId('feedbackSave');submit.disabled=true;
+ feedbackStatus('Salvando registro...');
+ try{
+  const d=await feedbackRequest('save_feedback',{
+    empresa_id:current.empresa_id,avaliacao_id:current.id,status:statusValue,
+    realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),
+    responsavel:byId('feedbackOwner').value.trim(),sintese:byId('feedbackNotes').value.trim(),
+    compromissos:byId('feedbackPdi').value.trim()
+  });
+  if(selectedAssessment?.id!==current.id||activeId!==current.empresa_id)return;
+  feedbackStatus('Devolutiva e PDI registrados. Atualizado em '+new Date(d.atualizado_em).toLocaleString('pt-BR')+'.');
+ }catch(e){feedbackStatus('Falha ao salvar: '+e.message,true);}
+ finally{submit.disabled=false;}
+});
+
 function clear(n){n.replaceChildren();}
 function cell(value){const e=document.createElement('td');e.textContent=value===null||value===undefined?'—':String(value);return e;}
 function validUuid(s){return typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);}
 async function init(){
- byId('app').classList.add('hidden');byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ byId('app').classList.add('hidden');byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
  if(!client||!window.MAP360Motor||!window.MAP360Analitico){document.body.classList.add('ready');status('Falha ao carregar componentes do sistema.','error');return;}
  try{
   const {data,error}=await client.auth.getUser();
@@ -105,7 +182,7 @@ async function init(){
 }
 async function loadCompany(){
  const id=byId('empresa').value;
- byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
  if(!companies.some(c=>c.id===id)){status('Empresa não autorizada.','error');return;}
  activeId=id;status('Buscando avaliações autorizadas...');
  const {data,error}=await client.from('map_avaliacoes')
@@ -133,7 +210,7 @@ async function loadResult(assessmentId,companyId){
  const selected=evaluations.find(e=>e.id===assessmentId&&e.empresa_id===companyId);
  if(!selected){status('Avaliação não autorizada.','error');return;}
  if(!selected.consentimento_registrado){status('Avaliação sem registro de consentimento nesta tabela. Relatório não exibido nesta etapa.','error');return;}
- byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
  status('Conferindo respostas da avaliação...');
  try{
   const {data,error}=await client.from('map_respostas').select('avaliacao_id,empresa_id,pergunta_id,nota')
@@ -161,7 +238,9 @@ async function loadResult(assessmentId,companyId){
   byId('resultTitle').textContent=resultado.titulo;
   byId('resultExplain').textContent='Relatório experimental recuperado de uma avaliação autorizada. O resultado não foi salvo novamente e não representa diagnóstico psicológico ou critério automático para decisões seletivas.';
   byId('summary').classList.remove('hidden');byId('report').classList.remove('hidden');
-  status('Relatório consultado com sucesso. Nenhum dado foi alterado.','ok');
+  selectedAssessment=selected;
+  status('Relatório consultado com sucesso. Nenhuma resposta foi alterada.','ok');
+  await loadFeedback(assessmentId,companyId);
  }catch(e){status('Não foi possível gerar o relatório: '+e.message,'error');}
 }
 byId('empresa').addEventListener('change',loadCompany);
