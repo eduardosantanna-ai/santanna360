@@ -49,7 +49,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;
 <div class="actions"><button id="refreshTracking" type="button">Atualizar convites</button></div>
 <p class="status" id="trackingStatus" role="status" aria-live="polite">Selecione uma empresa para consultar os convites.</p>
 <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;text-align:left">
-<thead><tr><th>Participante</th><th>Finalidade</th><th>Criado em</th><th>Validade</th><th>Situação</th><th>Ações</th></tr></thead>
+<thead><tr><th>Participante</th><th>Finalidade</th><th>Criado em</th><th>Validade</th><th>Situação</th><th>Devolutiva</th><th>Ações</th></tr></thead>
 <tbody id="trackingRows"></tbody></table></div>
 </section>
 <section class="card">
@@ -105,6 +105,9 @@ async function refreshTracking(){
   for(const value of [c.participante_nome,c.finalidade,prettyDate(c.criado_em),prettyDate(c.expira_em),c.estado_exibicao||c.estado]){
    const td=document.createElement('td');td.textContent=value||'—';tr.append(td);
   }
+  const statusCell=document.createElement('td');
+  statusCell.textContent=c.estado_exibicao==='concluido'?(c.devolutiva_status==='realizada'?'Realizada':c.devolutiva_status==='acompanhamento'?'Em acompanhamento':'Pendente'):'—';
+  tr.append(statusCell);
   const actions=document.createElement('td');
   if(c.estado_exibicao==='concluido'&&c.avaliacao_id){
    const a=document.createElement('a');
