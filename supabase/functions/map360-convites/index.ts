@@ -78,6 +78,47 @@ Deno.serve(async(req)=>{
    return reply(201,{id:insert.data.id,expira_em:insert.data.expira_em,
     link:"https://www.santanna360.com.br/map360-participar.html#token="+token});
   }
+  if(action==="get_feedback"||action==="save_feedback"){
+   const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
+   if(!isUuid(body.empresa_id)||!isUuid(body.avaliacao_id))return fail("Identificação da avaliação inválida");
+   if(!await permitted(req,action,admin.id,80))return fail("Limite de solicitações atingido",429);
+   const empresa=await admin.client.from("empresas").select("id").eq("id",body.empresa_id).maybeSingle();
+   if(empresa.error||!empresa.data)return fail("Empresa sem permissão de acesso",403);
+   const evalu=await admin.client.from("map_avaliacoes").select("id")
+     .eq("id",body.avaliacao_id).eq("empresa_id",body.empresa_id).maybeSingle();
+   if(evalu.error||!evalu.data)return fail("Avaliação não autorizada",403);
+   const checked=await admin.client.from("map_respostas").select("pergunta_id,nota")
+     .eq("empresa_id",body.empresa_id).eq("avaliacao_id",body.avaliacao_id).limit(33);
+   if(checked.error||checked.data?.length!==32||
+      new Set(checked.data.map(x=>x.pergunta_id)).size!==32||
+      checked.data.some(x=>!Number.isInteger(x.nota)||x.nota<1||x.nota>5))
+      return fail("Esta avaliação não possui 32 respostas válidas",409);
+   if(action==="get_feedback"){
+    const result=await service.from("map360_devolutivas")
+      .select("status,realizado_em,sintese,compromissos,responsavel,proxima_revisao,atualizado_em")
+      .eq("empresa_id",body.empresa_id).eq("avaliacao_id",body.avaliacao_id).maybeSingle();
+    if(result.error)throw Error("Não foi possível consultar a devolutiva");
+    return reply(200,{devolutiva:result.data||null});
+   }
+   const status=plain(body.status,20),sintese=plain(body.sintese,4001),
+     compromissos=plain(body.compromissos,4001),responsavel=plain(body.responsavel,161);
+   const dateOk=(x:unknown)=>typeof x==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
+     !Number.isNaN(new Date(x+"T12:00:00Z").valueOf())&&new Date(x+"T12:00:00Z").toISOString().slice(0,10)===x;
+   const realizado=body.realizado_em||null,revisao=body.proxima_revisao||null;
+   if(!["pendente","realizada","acompanhamento"].includes(status)||sintese.length>4000||
+      compromissos.length>4000||responsavel.length>160||
+      (realizado!==null&&!dateOk(realizado))||(revisao!==null&&!dateOk(revisao))||
+      (status!=="pendente"&&!realizado)||
+      (realizado&&revisao&&String(revisao)<String(realizado)))
+      return fail("Confira o status, as datas e os textos da devolutiva");
+   const result=await service.from("map360_devolutivas").upsert({
+      empresa_id:body.empresa_id,avaliacao_id:body.avaliacao_id,status,
+      realizado_em:realizado,sintese,compromissos,responsavel,proxima_revisao:revisao,
+      atualizado_por:admin.id,atualizado_em:new Date().toISOString()
+   },{onConflict:"avaliacao_id"}).select("atualizado_em").single();
+   if(result.error)throw Error("Não foi possível salvar a devolutiva");
+   return reply(200,{salvo:true,atualizado_em:result.data.atualizado_em});
+  }
   if(action==="list"){
    const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
    if(!isUuid(body.empresa_id))return fail("Empresa inválida");
