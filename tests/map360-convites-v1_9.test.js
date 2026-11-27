@@ -30,4 +30,14 @@ assert(admin.includes("invoke('revoke'")&&admin.includes("invoke('list'"),'Revog
 assert(admin.includes('Relatório completo')&&admin.includes('map360-restrito.html?empresa='),'Acesso ao relatório ausente');
 assert(restricted.includes('requestedCompany')&&restricted.includes('requestedEvaluation'),'Acesso contextual ao relatório ausente');
 assert(restricted.includes('participante_nome')&&restricted.includes('MAP360Analitico.render'),'Relatório completo não disponível');
-console.log('MAP 360° v1.9: testes de sintaxe, rastreio de convites e relatórios aprovados.');
+const feedbackSQL=fs.readFileSync('supabase/migrations/20261127_map360_devolutivas_v19.sql','utf8');
+assert(restricted.includes('id="feedbackForm"')&&restricted.includes('id="feedbackPdi"')&&restricted.includes('id="feedbackDate"'),'Formulário de devolutiva e PDI');
+assert(restricted.includes("feedbackRequest('get_feedback'")&&restricted.includes("feedbackRequest('save_feedback'"),'Consulta e gravação de devolutiva');
+assert(restricted.includes('selectedAssessment=selected'),'Vínculo com avaliação selecionada');
+assert(fn.includes('action==="get_feedback"||action==="save_feedback"'),'Ações de devolutiva restritas');
+assert(fn.includes('.eq("empresa_id",body.empresa_id).eq("avaliacao_id",body.avaliacao_id)'),'Avaliação deve ser autorizada no servidor');
+assert(fn.includes('new Set(checked.data.map(x=>x.pergunta_id)).size!==32'),'Exige 32 respostas válidas');
+assert(feedbackSQL.includes('avaliacao_id uuid not null unique'),'Uma ficha por avaliação');
+assert(feedbackSQL.includes('revoke all on public.map360_devolutivas from public,anon,authenticated'),'Tabela de devolutivas sem acesso direto');
+assert(!restricted.includes('SUPABASE_SERVICE_ROLE_KEY'),'Sem credenciais secretas no cliente');
+console.log('MAP 360° v1.9: verificações estáticas de convites, relatórios, devolutivas e PDI aprovadas.');
