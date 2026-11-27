@@ -47,6 +47,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;
 <h2>Acompanhamento de convites</h2>
 <p class="small">A consulta apresenta somente os convites vinculados à empresa escolhida e autorizada. O link individual não pode ser recuperado após a geração: para reenviar, será preciso criar outro convite.</p>
 <div class="actions"><button id="refreshTracking" type="button">Atualizar convites</button></div>
+<p id="trackingTotals" class="small" aria-live="polite"></p>
 <p class="status" id="trackingStatus" role="status" aria-live="polite">Selecione uma empresa para consultar os convites.</p>
 <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;text-align:left">
 <thead><tr><th>Participante</th><th>Finalidade</th><th>Criado em</th><th>Validade</th><th>Situação</th><th>Devolutiva</th><th>Ações</th></tr></thead>
@@ -95,11 +96,15 @@ async function invoke(action,data={}){
 async function refreshTracking(){
  const id=el('empresa').value;if(!companies.some(c=>c.id===id))return;
  trackingMessage('Consultando convites autorizados...');
+ el('trackingTotals').textContent='';
  el('trackingRows').replaceChildren();
  try{
  const data=await invoke('list',{empresa_id:id});
  if(el('empresa').value!==id)return;
  const items=data.convites||[];
+ const count=key=>items.filter(x=>x.estado_exibicao===key).length;
+ const feedbackPending=items.filter(x=>x.estado_exibicao==='concluido'&&(!x.devolutiva_status||x.devolutiva_status==='pendente')).length;
+ el('trackingTotals').textContent='Total: '+items.length+' · Pendentes: '+count('pendente')+' · Concluídos: '+count('concluido')+' · Expirados: '+count('expirado')+' · Revogados: '+count('revogado')+' · Aguardando devolutiva: '+feedbackPending;
  for(const c of items){
   const tr=document.createElement('tr');
   for(const value of [c.participante_nome,c.finalidade,prettyDate(c.criado_em),prettyDate(c.expira_em),c.estado_exibicao||c.estado]){
