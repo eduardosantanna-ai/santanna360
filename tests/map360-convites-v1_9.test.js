@@ -40,4 +40,7 @@ assert(fn.includes('new Set(checked.data.map(x=>x.pergunta_id)).size!==32'),'Exi
 assert(feedbackSQL.includes('avaliacao_id uuid not null unique'),'Uma ficha por avaliação');
 assert(feedbackSQL.includes('revoke all on public.map360_devolutivas from public,anon,authenticated'),'Tabela de devolutivas sem acesso direto');
 assert(!restricted.includes('SUPABASE_SERVICE_ROLE_KEY'),'Sem credenciais secretas no cliente');
+assert(admin.includes('id="trackingTotals"')&&admin.includes('Aguardando devolutiva:'),'Indicadores do painel de convites');
+assert(admin.includes('<th>Devolutiva</th>')&&admin.includes('devolutiva_status'),'Coluna de devolutiva');
+assert(fn.includes('devolutiva_status:')&&fn.includes('.eq("empresa_id",body.empresa_id).in("avaliacao_id",ids)'),'Status do PDI deve filtrar empresa');
 console.log('MAP 360° v1.9: verificações estáticas de convites, relatórios, devolutivas e PDI aprovadas.');
