@@ -130,8 +130,18 @@ Deno.serve(async(req)=>{
     .select("id,empresa_id,participante_nome,finalidade,estado,criado_em,expira_em,concluido_em,avaliacao_id")
     .eq("empresa_id",body.empresa_id).order("criado_em",{ascending:false}).limit(200);
    if(result.error)throw Error("Não foi possível consultar convites");
+   // Status do PDI é consultado apenas depois de validar administrador e empresa.
+   const ids=(result.data||[]).filter(c=>c.estado==="concluido"&&c.avaliacao_id).map(c=>c.avaliacao_id);
+   let devolutivas=new Map<string,string>();
+   if(ids.length){
+    const feedback=await service.from("map360_devolutivas")
+      .select("avaliacao_id,status").eq("empresa_id",body.empresa_id).in("avaliacao_id",ids);
+    if(feedback.error)throw Error("Não foi possível consultar a situação das devolutivas");
+    devolutivas=new Map((feedback.data||[]).map(x=>[x.avaliacao_id,x.status]));
+   }
    const convites=(result.data||[]).map(c=>({
-    ...c,estado_exibicao:c.estado==="pendente"&&new Date(c.expira_em)<=new Date()?"expirado":c.estado
+    ...c,estado_exibicao:c.estado==="pendente"&&new Date(c.expira_em)<=new Date()?"expirado":c.estado,
+    devolutiva_status:c.avaliacao_id?(devolutivas.get(c.avaliacao_id)||"pendente"):null
    }));
    return reply(200,{convites,limite:200});
   }
