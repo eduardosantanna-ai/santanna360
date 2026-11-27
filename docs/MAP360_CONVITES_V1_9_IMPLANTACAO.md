@@ -42,3 +42,11 @@ Administrador autenticado seleciona empresa e participante, confirma geração; 
 - A lista não fornece link original novamente; o token só é apresentado no ato da geração por segurança.
 - O estado 'concluído' depende do registro transacional das 32 respostas.
 - Nenhum desses recursos está implantado no Supabase ou publicado para uso real até testes de homologação.
+
+## Registro de devolutiva e PDI — extensão da homologação
+
+- Migração adicional: `supabase/migrations/20261127_map360_devolutivas_v19.sql`. Uma ficha por avaliação, vinculada à empresa, com situação, data da devolutiva, síntese, compromissos do PDI, responsável, próxima revisão e atualização.
+- A Edge Function `map360-convites` disponibiliza `get_feedback` e `save_feedback` somente para administrador autenticado e empresa acessível. O servidor também verifica que a avaliação pertence à empresa e que existem 32 respostas válidas.
+- A área restrita mostra o formulário **Registro da devolutiva e acompanhamento do PDI** após consultar o Relatório Analítico completo. O registro é separado das respostas originais: a devolutiva não modifica as pontuações.
+- A funcionalidade continua **não implantada** no Supabase e **não publicada** no site principal. A migração deve ser revisada contra o esquema existente, as rotinas e permissões devem ser testadas com duas empresas, e os dados pessoais precisam de regras definidas de retenção.
+- A devolutiva deve ser conduzida por responsável humano e pactuada com o participante. O MAP 360° permanece experimental, sem comprovação de aptidão ou diagnóstico.
