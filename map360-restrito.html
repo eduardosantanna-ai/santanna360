@@ -26,11 +26,14 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 .map-analytic-table th,.map-analytic-table td{padding:10px;border:1px solid #dde4eb;vertical-align:top}
 .map-analytic-table th{background:#edf2f6}
 #report p,#report li,#report td{text-align:justify;text-justify:inter-word;hyphens:auto;overflow-wrap:break-word}
+#feedbackPrint{background:white;padding:24px 26px;border:1px solid #dde4eb;border-radius:10px;margin-top:15px}
+#feedbackPrint p{white-space:pre-wrap;overflow-wrap:break-word}
 @media print{
  @page{size:A4;margin:11mm 12mm}
  header,.no-print,#summary{display:none!important}
  body{background:white}main{max-width:none;margin:0;padding:0}
  #report{display:block!important}
+ #feedbackPrint:not(.hidden){display:block!important;break-before:page;page-break-before:always;padding:0;margin:0;border:0;font-size:13px}
  .map-analytic-section{break-before:auto;page-break-before:auto;break-inside:auto;border:0;padding:0;margin:0 0 10px}
  .map-analytic-section p{font-size:13.5px;line-height:1.42;margin:4px 0 6px}.map-analytic-section h2{font-size:17px;margin:8px 0 3px}.map-analytic-section li{font-size:13.5px;margin:2px 0}.map-analytic-table td,.map-analytic-table th{padding:5px 7px;font-size:12.5px}
  .map-analytic-section h2{break-after:avoid;page-break-after:avoid}
@@ -51,8 +54,9 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 </div>
 <div class="actions"><button id="refresh" type="button">Atualizar</button><button id="logout" type="button">Sair</button></div>
 </section>
-<section id="summary" class="card hidden"><h2>Relatório completo para devolutiva</h2><p id="participantHeader"></p><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button></section>
+<section id="summary" class="card hidden"><h2>Relatório completo para devolutiva</h2><p id="participantHeader"></p><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button><label class="no-print" style="font-weight:400;margin-top:12px"><input id="includePdi" type="checkbox"> Incluir no PDF a devolutiva e o PDI já registrados</label><p id="pdfFeedbackNote" class="no-print" style="font-size:13px;color:#637387">Os compromissos somente serão incluídos se tiverem sido salvos no sistema.</p></section>
 <div id="report" class="hidden"></div>
+<section id="feedbackPrint" class="hidden" aria-label="Devolutiva registrada para impressão"></section>
 <section id="feedback" class="card hidden no-print">
 <h2>Registro da devolutiva e acompanhamento do PDI</h2>
 <p>Registro administrativo vinculado exclusivamente à avaliação e à empresa selecionadas. A devolutiva deve ser discutida com o participante antes de registrar compromissos.</p>
@@ -78,7 +82,7 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 'use strict';
 const byId=id=>document.getElementById(id);
 const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
-let user=null,companies=[],evaluations=[],questions=[],activeId=null,selectedAssessment=null;
+let user=null,companies=[],evaluations=[],questions=[],activeId=null,selectedAssessment=null,savedFeedback=null;
 const initialParams=new URLSearchParams(location.search);
 const requestedCompany=initialParams.get('empresa'),requestedEvaluation=initialParams.get('avaliacao');
 let initialOpened=false;
@@ -99,8 +103,36 @@ async function feedbackRequest(action,payload){
  return json;
 }
 function dateOrNull(x){return x||null;}
+function syncFeedbackPrint(){
+ const area=byId('feedbackPrint');area.replaceChildren();
+ area.classList.add('hidden');
+ if(!byId('includePdi').checked||!savedFeedback||!selectedAssessment)return;
+ const heading=document.createElement('h2');heading.textContent='Registro de devolutiva e PDI — anexo reservado';area.append(heading);
+ const caption=document.createElement('p');
+ caption.textContent='Participante: '+(selectedAssessment.participante_nome||'Não informado')+' · Registro da avaliação: '+new Date(selectedAssessment.criado_em).toLocaleDateString('pt-BR');
+ area.append(caption);
+ const fields=[
+  ['Situação',savedFeedback.status],
+  ['Data da devolutiva',savedFeedback.realizado_em?new Date(savedFeedback.realizado_em+'T12:00:00').toLocaleDateString('pt-BR'):'Não registrada'],
+  ['Responsável',savedFeedback.responsavel||'Não informado'],
+  ['Síntese da conversa',savedFeedback.sintese||'Sem síntese registrada'],
+  ['Compromissos acordados no PDI',savedFeedback.compromissos||'Nenhum compromisso registrado'],
+  ['Próxima revisão',savedFeedback.proxima_revisao?new Date(savedFeedback.proxima_revisao+'T12:00:00').toLocaleDateString('pt-BR'):'A definir']
+ ];
+ for(const [label,value] of fields){
+  const h=document.createElement('h3');h.textContent=label;area.append(h);
+  const p=document.createElement('p');p.textContent=value;area.append(p);
+ }
+ const warning=document.createElement('p');
+ warning.textContent='Anexo administrativo confidencial. Este instrumento é exploratório e a devolutiva exige contextualização profissional e revisão humana.';
+ area.append(warning);
+ area.classList.remove('hidden');
+}
+byId('includePdi').addEventListener('change',syncFeedbackPrint);
+
 async function loadFeedback(id,empresa){
  byId('feedback').classList.remove('hidden');
+ savedFeedback=null;syncFeedbackPrint();
  byId('feedbackForm').reset();
  byId('feedbackForm').querySelectorAll('input,textarea,select,button').forEach(e=>e.disabled=true);
  feedbackStatus('Consultando registro da devolutiva...');
@@ -108,6 +140,7 @@ async function loadFeedback(id,empresa){
   const data=await feedbackRequest('get_feedback',{empresa_id:empresa,avaliacao_id:id});
   if(!selectedAssessment||selectedAssessment.id!==id||activeId!==empresa)return;
   const d=data.devolutiva;
+  savedFeedback=d||null;syncFeedbackPrint();
   if(d){
    byId('feedbackState').value=d.status||'pendente';
    byId('feedbackDate').value=d.realizado_em||'';
@@ -138,6 +171,12 @@ byId('feedbackForm').addEventListener('submit',async event=>{
     compromissos:byId('feedbackPdi').value.trim()
   });
   if(selectedAssessment?.id!==current.id||activeId!==current.empresa_id)return;
+  savedFeedback={
+    status:statusValue,realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),
+    responsavel:byId('feedbackOwner').value.trim(),sintese:byId('feedbackNotes').value.trim(),
+    compromissos:byId('feedbackPdi').value.trim(),atualizado_em:d.atualizado_em
+  };
+  syncFeedbackPrint();
   feedbackStatus('Devolutiva e PDI registrados. Atualizado em '+new Date(d.atualizado_em).toLocaleString('pt-BR')+'.');
  }catch(e){feedbackStatus('Falha ao salvar: '+e.message,true);}
  finally{submit.disabled=false;}
@@ -147,7 +186,7 @@ function clear(n){n.replaceChildren();}
 function cell(value){const e=document.createElement('td');e.textContent=value===null||value===undefined?'—':String(value);return e;}
 function validUuid(s){return typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);}
 async function init(){
- byId('app').classList.add('hidden');byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
+ byId('app').classList.add('hidden');byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');byId('includePdi').checked=false;savedFeedback=null;syncFeedbackPrint();selectedAssessment=null;
  if(!client||!window.MAP360Motor||!window.MAP360Analitico){document.body.classList.add('ready');status('Falha ao carregar componentes do sistema.','error');return;}
  try{
   const {data,error}=await client.auth.getUser();
@@ -245,7 +284,7 @@ async function loadResult(assessmentId,companyId){
 }
 byId('empresa').addEventListener('change',loadCompany);
 byId('refresh').addEventListener('click',init);
-byId('print').addEventListener('click',()=>window.print());
+byId('print').addEventListener('click',()=>{syncFeedbackPrint();window.print();});
 byId('logout').addEventListener('click',async()=>{if(client)await client.auth.signOut();location.replace('login.html');});
 init();
 </script></body></html>
