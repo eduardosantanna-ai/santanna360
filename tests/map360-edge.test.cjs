@@ -108,11 +108,13 @@ async function main() {
   assert.equal((await send('view',{token})).status,404);
   assert.equal((await send('submit',{token,respostas:answers,confirmacao_privacidade:true})).status,404);
   const feedback={empresa_id:company,avaliacao_id:evaluation,status:'realizada',realizado_em:'2026-11-28',
-    proxima_revisao:'2026-12-15',compromissos:'Ação de desenvolvimento'};
+    proxima_revisao:'2026-12-15',encerrado_em:'2026-11-28',compromissos:'Ação de desenvolvimento'};
   assert.equal((await send('save_feedback',{...feedback,empresa_id:other},'admin')).status,403);
   assert.equal((await send('save_feedback',feedback,'admin')).status,200);
   const saved=await (await send('get_feedback',feedback,'admin')).json();
   assert.equal(saved.devolutiva.compromissos,feedback.compromissos);
+  assert.equal(saved.devolutiva.encerrado_em,feedback.encerrado_em);
+  assert.equal((await send('save_feedback',{...feedback,encerrado_em:'2099-01-01'},'admin')).status,400);
   assert.equal((await list(company))[0].devolutiva_status,'realizada');
   const second=await (await send('create',input,'admin')).json();
   assert.equal((await send('revoke',{empresa_id:company,id:second.id},'admin')).status,200);

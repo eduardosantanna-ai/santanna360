@@ -81,6 +81,20 @@ async function verifyDatabase() {
     assert.equal((await db.query('select id from map_avaliacoes')).rows.length, 0);
     await assert.rejects(submit(tokenA), /permission denied/);
     await assert.rejects(db.query('select * from map_convites'), /permission denied/);
+    await assert.rejects(db.query('select * from map360_aplicar_retencao()'), /permission denied/);
+    await db.exec('reset role; set role service_role');
+    await db.query("update map_convites set concluido_em=now()-interval '13 months' where avaliacao_id in ($1,$2)", [evaluationA,evaluationB]);
+    await db.query("update map_convites set criado_em=now()-interval '35 days', expira_em=now()-interval '32 days' where token_hash=$1", [expired]);
+    await db.query("update map_convites set estado='revogado' where token_hash=$1", [expired]);
+    assert.ok((await db.query('select revogado_em from map_convites where token_hash=$1', [expired])).rows[0].revogado_em);
+    const retention = async () => (await db.query('select * from map360_aplicar_retencao()')).rows[0];
+    assert.deepEqual(await retention(), {contatos_descartados:2,devolutivas_excluidas:0,avaliacoes_excluidas:1});
+    assert.equal((await db.query('select count(*)::int as n from map_respostas where avaliacao_id=$1',[evaluationA])).rows[0].n,32);
+    assert.equal((await db.query('select email from map_convites where token_hash=$1',[tokenA])).rows[0].email,null);
+    assert.notEqual((await db.query('select email from map_convites where token_hash=$1',[expired])).rows[0].email,null);
+    await db.query("update map360_devolutivas set realizado_em=current_date-interval '14 months', encerrado_em=current_date-interval '13 months' where avaliacao_id=$1", [evaluationA]);
+    assert.deepEqual(await retention(), {contatos_descartados:0,devolutivas_excluidas:1,avaliacoes_excluidas:1});
+    assert.deepEqual(await retention(), {contatos_descartados:0,devolutivas_excluidas:0,avaliacoes_excluidas:0});
   } finally {
     await db.close();
   }

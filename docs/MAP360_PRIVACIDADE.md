@@ -14,7 +14,14 @@ Em avaliações próprias, a Sant’Anna 360 é controladora quando decide a fin
 | Respostas e Relatório Analítico | Até 12 meses após a conclusão, com descarte antes desse prazo se a finalidade se encerrar e não houver motivo legítimo de conservação. |
 | Devolutiva e PDI | Até 12 meses após o encerramento do acompanhamento. Revisar casos sem data de encerramento e avaliar separadamente a necessidade de manter as respostas originais. |
 
-Os prazos são propostas operacionais, sujeitos a confirmação por finalidade e por contrato. Documentar exceções legais de conservação, restringir o acesso aos dados retidos e revisar a data de descarte. O código atual não executa esses prazos automaticamente. Antes de publicar a política, definir e testar a rotina de descarte, o tratamento de cópias exportadas e backups e o registro das operações de exclusão. Para relatórios exportados, orientar o destinatário autorizado a seguir o prazo acordado e controlar o acesso ao arquivo.
+Os prazos são propostas operacionais, sujeitos a confirmação por finalidade e por contrato. Documentar exceções legais de conservação, restringir o acesso aos dados retidos e revisar a data de descarte. A rotina de descarte foi testada com dados fictícios em homologação e só pode ser chamada pelo backend. O agendamento permanece desativado. Antes de publicar a política, definir o tratamento de cópias exportadas e backups e o registro das operações de exclusão. Para relatórios exportados, orientar o destinatário autorizado a seguir o prazo acordado e controlar o acesso ao arquivo.
+
+## Execução e exceções
+
+- Registrar a data de encerramento na ficha quando o acompanhamento terminar. Uma ficha em aberto ou ainda dentro do prazo mantém a avaliação vinculada. Revisar periodicamente fichas em aberto e registrar o motivo quando houver necessidade de conservar a avaliação além do prazo padrão.
+- Avaliações anteriores ao fluxo de convites permanecem fora da rotina. Para convites revogados antes de existir registro da data de revogação, usa-se a expiração prevista como referência conservadora. Depois do descarte do contato de convites sem avaliação, o nome do participante é substituído por um texto neutro.
+- A função `map360_aplicar_retencao()` devolve contagens de contatos removidos, fichas excluídas e avaliações excluídas. A exclusão da avaliação também remove suas respostas e o convite associado pelas chaves estrangeiras. O relatório consultado na plataforma é calculado a partir das respostas.
+- Antes de agendar a execução com dados reais, revisar as exceções de conservação aplicáveis a cada operação e definir como suspender uma exclusão quando houver obrigação de preservar dados. Nenhum arquivo exportado é apagado pela função.
 
 ## Pedidos dos participantes
 

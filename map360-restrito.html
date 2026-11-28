@@ -65,6 +65,7 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 <div class="actions">
 <label>Situação<select id="feedbackState"><option value="pendente">Pendente</option><option value="realizada">Devolutiva realizada</option><option value="acompanhamento">Em acompanhamento</option></select></label>
 <label>Data da devolutiva<input id="feedbackDate" type="date"></label>
+<label>Encerramento do acompanhamento<input id="feedbackClosed" type="date"></label>
 <label>Próxima revisão<input id="feedbackReview" type="date"></label>
 </div>
 <label>Responsável pela devolutiva<input id="feedbackOwner" type="text" maxlength="160" placeholder="Profissional responsável"></label>
@@ -118,6 +119,7 @@ function syncFeedbackPrint(){
   ['Responsável',savedFeedback.responsavel||'Não informado'],
   ['Síntese da conversa',savedFeedback.sintese||'Sem síntese registrada'],
   ['Compromissos acordados no PDI',savedFeedback.compromissos||'Nenhum compromisso registrado'],
+  ['Encerramento do acompanhamento',savedFeedback.encerrado_em?new Date(savedFeedback.encerrado_em+'T12:00:00').toLocaleDateString('pt-BR'):'Em aberto'],
   ['Próxima revisão',savedFeedback.proxima_revisao?new Date(savedFeedback.proxima_revisao+'T12:00:00').toLocaleDateString('pt-BR'):'A definir']
  ];
  for(const [label,value] of fields){
@@ -146,6 +148,7 @@ async function loadFeedback(id,empresa){
    byId('feedbackState').value=d.status||'pendente';
    byId('feedbackDate').value=d.realizado_em||'';
    byId('feedbackReview').value=d.proxima_revisao||'';
+   byId('feedbackClosed').value=d.encerrado_em||'';
    byId('feedbackOwner').value=d.responsavel||'';
    byId('feedbackNotes').value=d.sintese||'';
    byId('feedbackPdi').value=d.compromissos||'';
@@ -158,7 +161,8 @@ byId('feedbackForm').addEventListener('submit',async event=>{
  event.preventDefault();
  const current=selectedAssessment;
  if(!current||activeId!==current.empresa_id)return;
- const statusValue=byId('feedbackState').value,date=byId('feedbackDate').value,review=byId('feedbackReview').value;
+ const statusValue=byId('feedbackState').value,date=byId('feedbackDate').value,review=byId('feedbackReview').value,closed=byId('feedbackClosed').value;
+ if(closed&&(statusValue!=='realizada'||!date||closed<date)){feedbackStatus('Para encerrar o acompanhamento, registre a devolutiva realizada e informe uma data de encerramento igual ou posterior. ',true);return;}
  if(statusValue!=='pendente'&&!date){feedbackStatus('Informe a data da devolutiva para marcar como realizada ou em acompanhamento.',true);return;}
  if(date&&review&&review<date){feedbackStatus('A próxima revisão não pode ser anterior à devolutiva.',true);return;}
  if(!confirm('Salvar o registro da devolutiva e os compromissos do PDI para este participante?'))return;
@@ -167,13 +171,13 @@ byId('feedbackForm').addEventListener('submit',async event=>{
  try{
   const d=await feedbackRequest('save_feedback',{
     empresa_id:current.empresa_id,avaliacao_id:current.id,status:statusValue,
-    realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),
+    realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),encerrado_em:dateOrNull(closed),
     responsavel:byId('feedbackOwner').value.trim(),sintese:byId('feedbackNotes').value.trim(),
     compromissos:byId('feedbackPdi').value.trim()
   });
   if(selectedAssessment?.id!==current.id||activeId!==current.empresa_id)return;
   savedFeedback={
-    status:statusValue,realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),
+    status:statusValue,realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),encerrado_em:dateOrNull(closed),
     responsavel:byId('feedbackOwner').value.trim(),sintese:byId('feedbackNotes').value.trim(),
     compromissos:byId('feedbackPdi').value.trim(),atualizado_em:d.atualizado_em
   };

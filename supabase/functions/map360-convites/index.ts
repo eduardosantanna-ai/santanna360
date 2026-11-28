@@ -123,7 +123,7 @@ Deno.serve(async(req)=>{
       return fail("Esta avaliação não possui 32 respostas válidas",409);
    if(action==="get_feedback"){
     const result=await service.from("map360_devolutivas")
-      .select("status,realizado_em,sintese,compromissos,responsavel,proxima_revisao,atualizado_em")
+      .select("status,realizado_em,sintese,compromissos,responsavel,proxima_revisao,encerrado_em,atualizado_em")
       .eq("empresa_id",body.empresa_id).eq("avaliacao_id",body.avaliacao_id).maybeSingle();
     if(result.error)throw Error("Não foi possível consultar a devolutiva");
     return reply(200,{devolutiva:result.data||null});
@@ -133,15 +133,18 @@ Deno.serve(async(req)=>{
    const dateOk=(x:unknown)=>typeof x==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
      !Number.isNaN(new Date(x+"T12:00:00Z").valueOf())&&new Date(x+"T12:00:00Z").toISOString().slice(0,10)===x;
    const realizado=body.realizado_em||null,revisao=body.proxima_revisao||null;
+   const encerrado=body.encerrado_em||null;
+   const hoje=new Intl.DateTimeFormat("sv-SE",{timeZone:"America/Sao_Paulo"}).format(new Date());
    if(!["pendente","realizada","acompanhamento"].includes(status)||sintese.length>4000||
       compromissos.length>4000||responsavel.length>160||
       (realizado!==null&&!dateOk(realizado))||(revisao!==null&&!dateOk(revisao))||
       (status!=="pendente"&&!realizado)||
+      (encerrado!==null&&(!dateOk(encerrado)||status!=="realizada"||!realizado||String(encerrado)<String(realizado)||String(encerrado)>hoje))||
       (realizado&&revisao&&String(revisao)<String(realizado)))
       return fail("Confira o status, as datas e os textos da devolutiva");
    const result=await service.from("map360_devolutivas").upsert({
       empresa_id:body.empresa_id,avaliacao_id:body.avaliacao_id,status,
-      realizado_em:realizado,sintese,compromissos,responsavel,proxima_revisao:revisao,
+      realizado_em:realizado,sintese,compromissos,responsavel,proxima_revisao:revisao,encerrado_em:encerrado,
       atualizado_por:admin.id,atualizado_em:new Date().toISOString()
    },{onConflict:"avaliacao_id"}).select("atualizado_em").single();
    if(result.error)throw Error("Não foi possível salvar a devolutiva");
