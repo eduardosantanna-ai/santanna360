@@ -50,3 +50,9 @@ Administrador autenticado seleciona empresa e participante, confirma geração; 
 - A área restrita mostra o formulário **Registro da devolutiva e acompanhamento do PDI** após consultar o Relatório Analítico completo. O registro é separado das respostas originais: a devolutiva não modifica as pontuações.
 - A funcionalidade continua **não implantada** no Supabase e **não publicada** no site principal. A migração deve ser revisada contra o esquema existente, as rotinas e permissões devem ser testadas com duas empresas, e os dados pessoais precisam de regras definidas de retenção.
 - A devolutiva deve ser conduzida por responsável humano e pactuada com o participante. O MAP 360° permanece experimental, sem comprovação de aptidão ou diagnóstico.
+
+## Impressão do relatório e anexo da devolutiva
+- O Relatório Analítico mantém as dez seções existentes.
+- O administrador poderá selecionar **Incluir no PDF a devolutiva e o PDI já registrados**. O anexo será gerado somente a partir de dados previamente recuperados ou salvos no Supabase para a avaliação autorizada.
+- O anexo é opcional e contém situação, data, responsável, síntese, compromissos e próxima revisão. Sem dados gravados, a opção não adicionará informações fictícias.
+- A opção não dispara e-mail ao participante e não altera o questionário.
