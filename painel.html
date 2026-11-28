@@ -50,14 +50,15 @@ function download(blob,name){let u=URL.createObjectURL(blob),a=document.createEl
 function dados(){document.getElementById('main').innerHTML=topoPainel('Backup e dados','Exportação e restauração manual do protótipo')+`<div class="notice">Dados locais não são seguros para uso com informações confidenciais ou dados pessoais reais. Para operação profissional, será necessário banco de dados, autenticação e autorização por empresa.</div><div class="actions"><button class="primary" onclick="download(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),'SantAnna360_Backup_v8.json')">Exportar backup JSON</button></div><label>Restaurar backup JSON (substitui todos os dados locais)</label><input type="file" id="restore" accept="application/json"><div class="actions"><button onclick="restore()">Restaurar backup</button></div>`}
 function restore(){let f=document.getElementById('restore').files[0];if(!f)return alert('Selecione um arquivo JSON.');if(!confirm('Substituir os dados locais pelo arquivo selecionado?'))return;f.text().then(t=>{try{let x=JSON.parse(t);if(!Array.isArray(x.companies)||!x.diagnostics||!Array.isArray(x.plans)||!Array.isArray(x.swots)||!x.hr||!x.targets)throw Error('Estrutura inválida');db={...fresh(),...x};active=db.companies[0]?.id||'';save();view('empresas')}catch(e){alert('Backup inválido: '+e.message)}})}
 view('inicio');
-</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</script><script src="js/s360-supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/dist/umd/supabase.js"></script>
 <script>
 (async function verificarAdministrador() {
-  const URL = 'https://okvikkifrsbovbppywgp.supabase.co';
-  const PUBLIC_KEY = 'sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC';
+  const URL = window.S360Supabase.url;
+  const PUBLIC_KEY = window.S360Supabase.key;
   const redirecionar = () => window.location.replace('login.html');
   try {
-    if (!window.supabase) return redirecionar();
+    if (!window.S360Supabase.origins.includes(location.origin) || !window.supabase) return redirecionar();
     const client = window.supabase.createClient(URL, PUBLIC_KEY);
     const { data: userData, error: authError } = await client.auth.getUser();
     if (authError || !userData.user) return redirecionar();

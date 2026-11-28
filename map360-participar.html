@@ -16,10 +16,11 @@
 <p><button id="submit" type="button">Enviar respostas</button></p></section>
 <section id="done" class="hidden"><h2>Avaliação concluída</h2><p>Suas respostas foram recebidas. Obrigado por participar.</p></section>
 </main>
+<script src="js/s360-supabase-config.js"></script>
 <script>
 'use strict';
-const URL='https://okvikkifrsbovbppywgp.supabase.co/functions/v1/map360-convites';
-const KEY='sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC';
+const URL=window.S360Supabase.url + '/functions/v1/map360-convites';
+const KEY=window.S360Supabase.key;
 const el=id=>document.getElementById(id);
 const fragment=new URLSearchParams(location.hash.slice(1)),token=fragment.get('token')||'';
 history.replaceState(null,'',location.pathname); // Remove token from visible URL immediately.
@@ -32,6 +33,7 @@ async function call(action,data){
  return json;
 }
 async function initialize(){
+ if(!window.S360Supabase.origins.includes(location.origin)){el('status').textContent='Ambiente indisponível.';return;}
  if(!/^[A-Za-z0-9_-]{43}$/.test(token)){el('status').textContent='Este link individual é inválido ou está incompleto.';return;}
  try{
   const data=await call('view',{});questions=data.perguntas;

@@ -1,15 +1,16 @@
 // Supabase Edge Function: map360-convites (Deno).
 // Deploy with --no-verify-jwt; authorization is enforced per action below.
-// Requires SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY and MAP360_RATE_SALT.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Requires SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY MAP360_RATE_SALT and MAP360_SITE_ORIGIN.
+import { createClient } from "npm:@supabase/supabase-js@2.89.0";
 const BASE = Deno.env.get("SUPABASE_URL") || "";
 const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const RATE_SALT = Deno.env.get("MAP360_RATE_SALT") || "";
+const SITE_ORIGIN = Deno.env.get("MAP360_SITE_ORIGIN") || "";
 const service = createClient(BASE, SERVICE, {auth:{persistSession:false,autoRefreshToken:false}});
 const encoder = new TextEncoder();
 const cors = {
-  "Access-Control-Allow-Origin": "https://www.santanna360.com.br",
+  "Access-Control-Allow-Origin": SITE_ORIGIN,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization,apikey,content-type,x-client-info",
   "Cache-Control": "no-store",
@@ -18,6 +19,26 @@ const cors = {
  "Vary": "Origin",
 };
 function reply(status:number, body:unknown){return new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json; charset=utf-8"}});}
+class BodyTooLarge extends Error {}
+async function readBody(req: Request): Promise<unknown> {
+  const reader = req.body?.getReader();
+  if (!reader) throw new Error("Dados ausentes");
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  let bytes = 0;
+  let text = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) return JSON.parse(text + decoder.decode());
+      bytes += value.byteLength;
+      if (bytes > 20000) throw new BodyTooLarge();
+      text += decoder.decode(value, { stream: true });
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
 function fail(message:string,status=400){return reply(status,{error:message});}
 function base64Url(bytes:Uint8Array){return btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
 async function sha256(token:string){const digest=await crypto.subtle.digest("SHA-256",encoder.encode(token));return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");}
@@ -44,11 +65,17 @@ async function authorizeAdmin(req:Request){
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors});
  if(req.method!=="POST")return fail("Método indisponível",405);
- if(req.headers.get("origin")!=="https://www.santanna360.com.br")return fail("Origem não permitida",403);
- if(!BASE||!ANON||!SERVICE||!RATE_SALT)return fail("Serviço não configurado",503);
+ if(req.headers.get("origin")!==SITE_ORIGIN)return fail("Origem não permitida",403);
+ if(!BASE||!ANON||!SERVICE||!RATE_SALT||!SITE_ORIGIN)return fail("Serviço não configurado",503);
  let body:Record<string,unknown>;
- try{if(Number(req.headers.get("content-length")||0)>20000)return fail("Requisição muito grande",413);body=await req.json();if(!body||Array.isArray(body)||typeof body!=="object")return fail("Dados inválidos");}
- catch{return fail("JSON inválido");}
+ try {
+  if (Number(req.headers.get("content-length") || 0) > 20000) throw new BodyTooLarge();
+  const payload = await readBody(req);
+  if (!payload || Array.isArray(payload) || typeof payload !== "object") return fail("Dados inválidos");
+  body = payload as Record<string, unknown>;
+ } catch (error) {
+  return error instanceof BodyTooLarge ? fail("Requisição muito grande", 413) : fail("JSON inválido");
+ }
  const action=body.action;
  try{
   if(action==="create"){
@@ -76,7 +103,7 @@ Deno.serve(async(req)=>{
    if(insert.error)throw Error("Não foi possível criar convite");
    // Token is ONLY returned once. Do not log response or persist plaintext token.
    return reply(201,{id:insert.data.id,expira_em:insert.data.expira_em,
-    link:"https://www.santanna360.com.br/map360-participar.html#token="+token});
+    link:new URL("/map360-participar.html#token="+token,SITE_ORIGIN).href});
   }
   if(action==="get_feedback"||action==="save_feedback"){
    const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
@@ -84,9 +111,10 @@ Deno.serve(async(req)=>{
    if(!await permitted(req,action,admin.id,80))return fail("Limite de solicitações atingido",429);
    const empresa=await admin.client.from("empresas").select("id").eq("id",body.empresa_id).maybeSingle();
    if(empresa.error||!empresa.data)return fail("Empresa sem permissão de acesso",403);
-   const evalu=await admin.client.from("map_avaliacoes").select("id")
+   const evalu=await admin.client.from("map_avaliacoes").select("id,consentimento_registrado")
      .eq("id",body.avaliacao_id).eq("empresa_id",body.empresa_id).maybeSingle();
    if(evalu.error||!evalu.data)return fail("Avaliação não autorizada",403);
+   if(!evalu.data.consentimento_registrado)return fail("Avaliação sem confirmação de privacidade",409);
    const checked=await admin.client.from("map_respostas").select("pergunta_id,nota")
      .eq("empresa_id",body.empresa_id).eq("avaliacao_id",body.avaliacao_id).limit(33);
    if(checked.error||checked.data?.length!==32||
@@ -122,7 +150,7 @@ Deno.serve(async(req)=>{
   if(action==="list"){
    const admin=await authorizeAdmin(req);if(!admin)return fail("Acesso de administrador necessário",403);
    if(!isUuid(body.empresa_id))return fail("Empresa inválida");
-   if(!await permitted(req,"list",admin.id,120))return fail("Limite de consultas atingido",429);
+   if(!await permitted(req,"list",admin.id,100))return fail("Limite de consultas atingido",429);
    const empresa=await admin.client.from("empresas").select("id").eq("id",body.empresa_id).maybeSingle();
    if(empresa.error||!empresa.data)return fail("Empresa sem permissão de acesso",403);
    // Limita a listagem e não devolve token_hash nem contatos pessoais.
@@ -153,13 +181,15 @@ Deno.serve(async(req)=>{
    if(empresa.error||!empresa.data)return fail("Empresa sem permissão de acesso",403);
    const result=await service.from("map_convites").update({estado:"revogado"})
     .eq("id",body.id).eq("empresa_id",body.empresa_id).eq("estado","pendente").select("id");
-   if(result.error||result.data?.length!==1)return fail("Convite não encontrado ou já encerrado",404);
+   if(result.error)throw Error("Não foi possível revogar o convite");
+   if(result.data?.length!==1)return fail("Convite não encontrado ou já encerrado",404);
    return reply(200,{revogado:true});
   }
   if(action==="view"||action==="submit"){
    if(!isToken(body.token))return fail("Link inválido ou incompleto",404);
    const hash=await sha256(body.token);
-   if(!await permitted(req,action,hash,action==="view"?60:10))return fail("Muitas tentativas. Tente novamente mais tarde.",429);
+   if(!await permitted(req,action,"origem",action==="view"?100:40)||
+      !await permitted(req,action,hash,action==="view"?60:10))return fail("Muitas tentativas. Tente novamente mais tarde.",429);
    const c=await service.from("map_convites").select("id,participante_nome,finalidade,estado,expira_em")
      .eq("token_hash",hash).maybeSingle();
    if(c.error||!c.data||c.data.estado!=="pendente"||new Date(c.data.expira_em)<=new Date())return fail("Convite expirado, utilizado ou indisponível",404);

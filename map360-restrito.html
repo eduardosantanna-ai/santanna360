@@ -75,20 +75,21 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 </form></section>
 <p class="no-print" style="font-size:12px;color:#627387">Este módulo depende de autenticação Supabase e das políticas RLS já existentes. A página HTML não é uma barreira de acesso; os dados devem permanecer protegidos no banco.</p>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/s360-supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/dist/umd/supabase.js"></script>
 <script src="js/map360-motor-v1_3.js"></script>
 <script src="js/map360-relatorio-analitico-v1_6.js"></script>
 <script>
 'use strict';
 const byId=id=>document.getElementById(id);
-const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
+const client=window.S360Supabase.origins.includes(location.origin) && window.supabase?.createClient(window.S360Supabase.url,window.S360Supabase.key);
 let user=null,companies=[],evaluations=[],questions=[],activeId=null,selectedAssessment=null,savedFeedback=null;
 const initialParams=new URLSearchParams(location.search);
 const requestedCompany=initialParams.get('empresa'),requestedEvaluation=initialParams.get('avaliacao');
-let initialOpened=false;
+let initialOpened=false, companyRequest=0, resultRequest=0;
 function status(s,kind=''){const p=byId('status');p.textContent=s;p.className='alert '+kind;}
 
-const FEEDBACK_URL='https://okvikkifrsbovbppywgp.supabase.co/functions/v1/map360-convites';
+const FEEDBACK_URL=window.S360Supabase.url + '/functions/v1/map360-convites';
 function feedbackStatus(text,error=false){
  const p=byId('feedbackStatus');p.textContent=text;p.className='alert '+(error?'error':'ok');
 }
@@ -96,7 +97,7 @@ async function feedbackRequest(action,payload){
  const session=await client.auth.getSession(),token=session.data.session?.access_token;
  if(!token)throw Error('Sua sessão expirou. Faça login novamente.');
  const res=await fetch(FEEDBACK_URL,{method:'POST',mode:'cors',cache:'no-store',referrerPolicy:'no-referrer',
- headers:{'Content-Type':'application/json','apikey':'sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC','Authorization':'Bearer '+token},
+ headers:{'Content-Type':'application/json','apikey':window.S360Supabase.key,'Authorization':'Bearer '+token},
  body:JSON.stringify({action,...payload})});
  const json=await res.json().catch(()=>({}));
  if(!res.ok)throw Error(json.error||'Serviço de devolutivas indisponível.');
@@ -220,6 +221,8 @@ async function init(){
  }catch(e){document.body.classList.add('ready');status('Consulta indisponível: '+e.message,'error');}
 }
 async function loadCompany(){
+ const request=++companyRequest;
+ ++resultRequest;
  const id=byId('empresa').value;
  byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
  if(!companies.some(c=>c.id===id)){status('Empresa não autorizada.','error');return;}
@@ -227,6 +230,7 @@ async function loadCompany(){
  const {data,error}=await client.from('map_avaliacoes')
    .select('id,empresa_id,colaborador_id,participante_nome,finalidade,consentimento_registrado,criado_em')
    .eq('empresa_id',id).order('criado_em',{ascending:false}).limit(100);
+ if(request!==companyRequest)return;
  if(error){status('Erro ao consultar avaliações: '+error.message,'error');return;}
  evaluations=data||[];
  clear(byId('avaliacoes'));byId('totals').textContent='Avaliações visíveis: '+evaluations.length+' (limite da listagem: 100).';
@@ -240,22 +244,26 @@ async function loadCompany(){
  status('Avaliações carregadas em modo de consulta.','ok');
  if(!initialOpened&&validUuid(requestedEvaluation)&&id===requestedCompany){
   initialOpened=true;
-  if(evaluations.some(e=>e.id===requestedEvaluation&&e.empresa_id===id))await loadResult(requestedEvaluation,id);
-  else status('A avaliação indicada não está autorizada ou não aparece entre as 100 mais recentes.','error');
+  await loadResult(requestedEvaluation,id);
  }
 }
 async function loadResult(assessmentId,companyId){
  if(companyId!==activeId||!validUuid(assessmentId)||!validUuid(companyId))return;
- const selected=evaluations.find(e=>e.id===assessmentId&&e.empresa_id===companyId);
- if(!selected){status('Avaliação não autorizada.','error');return;}
- if(!selected.consentimento_registrado){status('Avaliação sem registro de consentimento nesta tabela. Relatório não exibido nesta etapa.','error');return;}
+ const request=++resultRequest;
  byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
  status('Conferindo respostas da avaliação...');
  try{
+  const assessment=await client.from('map_avaliacoes')
+    .select('id,empresa_id,participante_nome,finalidade,consentimento_registrado,criado_em')
+    .eq('id',assessmentId).eq('empresa_id',companyId).maybeSingle();
+  if(request!==resultRequest)return;
+  if(assessment.error||!assessment.data){status('Avaliação não autorizada ou indisponível.','error');return;}
+  const selected=assessment.data;
+  if(!selected.consentimento_registrado){status('Avaliação sem registro de consentimento.','error');return;}
   const {data,error}=await client.from('map_respostas').select('avaliacao_id,empresa_id,pergunta_id,nota')
       .eq('empresa_id',companyId).eq('avaliacao_id',assessmentId).limit(100);
+  if(request!==resultRequest)return;
   if(error)throw error;
-  if(companyId!==activeId)return; // Ignora respostas de outra seleção após troca rápida de empresa.
   const rows=data||[];
   const lookup=new Map(questions.map(q=>[q.id,q.codigo]));
   const respostas={};
@@ -280,7 +288,7 @@ async function loadResult(assessmentId,companyId){
   selectedAssessment=selected;
   status('Relatório consultado com sucesso. Nenhuma resposta foi alterada.','ok');
   await loadFeedback(assessmentId,companyId);
- }catch(e){status('Não foi possível gerar o relatório: '+e.message,'error');}
+ }catch(e){if(request===resultRequest)status('Não foi possível gerar o relatório: '+e.message,'error');}
 }
 byId('empresa').addEventListener('change',loadCompany);
 byId('refresh').addEventListener('click',init);

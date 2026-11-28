@@ -1,9 +1,7 @@
 -- MAP 360° v1.9 — convites individuais (aplicar somente após revisão e teste em homologação).
-create extension if not exists pgcrypto;
-
 create table if not exists public.map_convites (
  id uuid primary key default gen_random_uuid(),
- empresa_id uuid not null,
+ empresa_id uuid not null references public.empresas(id) on delete cascade,
  criado_por uuid not null,
  participante_nome text not null check (length(trim(participante_nome)) between 1 and 120),
  email text,
@@ -15,6 +13,12 @@ create table if not exists public.map_convites (
  avaliacao_id uuid,
  criado_em timestamptz not null default now(),
  concluido_em timestamptz,
+ constraint map_convites_avaliacao_empresa foreign key (avaliacao_id, empresa_id)
+   references public.map_avaliacoes(id, empresa_id) on delete cascade,
+ constraint map_convites_conclusao check (
+   (estado = 'concluido' and avaliacao_id is not null and concluido_em is not null)
+   or (estado <> 'concluido' and avaliacao_id is null and concluido_em is null)
+ ),
  constraint map_convites_contact check ((email is not null and trim(email)<>'') or (telefone is not null and trim(telefone)<>'')),
  constraint map_convites_expiration check (expira_em > criado_em)
 );
@@ -48,15 +52,19 @@ begin
   if not found or v_convite.estado<>'pendente' or v_convite.expira_em<=now() then
     raise exception 'Convite indisponível ou expirado';
   end if;
-  if jsonb_typeof(p_respostas)<>'array' or jsonb_array_length(p_respostas)<>32 then
+  if jsonb_typeof(p_respostas) is distinct from 'array' then
+    raise exception 'Respostas inválidas';
+  end if;
+  if jsonb_array_length(p_respostas)<>32 then
     raise exception 'A avaliação exige exatamente 32 respostas';
   end if;
   if exists (
     select 1 from jsonb_array_elements(p_respostas) a
     where jsonb_typeof(a)<>'object'
       or not (a ? 'pergunta_id' and a ? 'nota')
-      or a->>'nota' not in ('1','2','3','4','5')
-      or not ((a->>'pergunta_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+      or jsonb_typeof(a->'nota') is distinct from 'number'
+      or coalesce(a->>'nota','') not in ('1','2','3','4','5')
+      or not (coalesce(a->>'pergunta_id','') ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
   ) then raise exception 'Há respostas inválidas'; end if;
   select count(distinct a->>'pergunta_id') into v_count from jsonb_array_elements(p_respostas) a;
   if v_count<>32 then raise exception 'Perguntas duplicadas'; end if;
@@ -102,7 +110,7 @@ create or replace function public.map360_convite_permitir(
 language plpgsql security definer set search_path=public,pg_temp as $$
 declare v_tentativas integer;
 begin
- if p_chave is null or p_chave !~ '^[0-9a-f]{64}$' or p_limite not between 1 and 100 then
+ if p_chave is null or p_chave !~ '^[0-9a-f]{64}$' or p_limite is null or p_limite not between 1 and 100 then
    return false;
  end if;
  insert into public.map360_convite_limites(chave,janela_inicio,tentativas)

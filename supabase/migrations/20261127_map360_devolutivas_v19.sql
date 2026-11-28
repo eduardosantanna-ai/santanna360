@@ -12,6 +12,8 @@ create table if not exists public.map360_devolutivas (
  proxima_revisao date,
  atualizado_por uuid not null,
  atualizado_em timestamptz not null default now(),
+ constraint map360_devolutivas_avaliacao_empresa foreign key (avaliacao_id, empresa_id)
+  references public.map_avaliacoes(id, empresa_id) on delete cascade,
  constraint map360_devolutivas_datas check (
   (status='pendente' or realizado_em is not null)
   and (proxima_revisao is null or realizado_em is null or proxima_revisao>=realizado_em)

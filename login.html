@@ -287,7 +287,8 @@
     © Sant'Anna 360° — Área restrita a usuários autorizados.
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/s360-supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/dist/umd/supabase.js"></script>
 
   <script>
     // CONFIGURAÇÃO DO SUPABASE
@@ -296,9 +297,9 @@
     //
     // Nunca coloque a chave secret ou service_role aqui.
 
-const SUPABASE_URL = 'https://okvikkifrsbovbppywgp.supabase.co';
+const SUPABASE_URL = window.S360Supabase.url;
 
-const SUPABASE_PUBLIC_KEY = 'sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC';
+const SUPABASE_PUBLIC_KEY = window.S360Supabase.key;
     
 const form = document.getElementById('loginForm');
 const message = document.getElementById('message');
@@ -322,6 +323,7 @@ const togglePassword = document.getElementById('togglePassword');
     });
 
     const configured =
+      window.S360Supabase.origins.includes(location.origin) &&
       SUPABASE_URL.startsWith('https://') &&
       SUPABASE_PUBLIC_KEY.startsWith('sb_publishable_');
 
@@ -388,7 +390,8 @@ const togglePassword = document.getElementById('togglePassword');
           showMessage('Painel do cliente em implantação.', 'info');
             return;
 }
-         window.location.assign('painel.html');
+          window.location.assign('painel.html');
+        } catch {
           showMessage(
             'Ocorreu uma falha de comunicação. Tente novamente.',
             'error'

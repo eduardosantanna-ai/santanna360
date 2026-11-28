@@ -1,58 +1,45 @@
-# MAP 360° v1.9 — Implantação segura de convites
+# MAP 360° v1.9 — Homologação de convites
 
-**Estado: branch de desenvolvimento. NÃO implantado no Supabase. NÃO publicado no domínio como convites reais.**
+O PR #10 permanece em rascunho. O projeto principal foi consultado em modo de leitura. As duas migrações e a Edge Function foram implantadas exclusivamente no projeto Supabase separado de homologação (`reqquwehcizyzzkorhjm`), com dados fictícios.
 
-## Código preparado
-- supabase/migrations/20261125_map360_convites_v19.sql: tabela protegida e conclusão transacional
-- supabase/functions/map360-convites/index.ts: backend com ações create/view/submit
-- map360-convites-homologacao.html: geração via backend e opção de compartilhamento manual
-- map360-participar.html: questionário individual com 32 questões
+## Banco e permissões
 
-## Implantação segura
-1. Revisar os tipos, colunas e constraints reais de empresas, perfis, map_avaliacoes, map_respostas e map_perguntas no Supabase.
-2. Aprovar o aviso de privacidade, finalidade, base legal, retenção de dados e canais de contato. O texto atual é provisório.
-3. Aplicar a migração PRIMEIRO no ambiente de homologação.
-4. Configurar SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY e MAP360_RATE_SALT (segredo aleatório forte) como segredos da Edge Function — nunca no HTML.
-5. Implantar a função map360-convites no Supabase. A validação de JWT do administrador ocorre no backend, e participante usa token opaco.
-6. Testar o limite de tentativas incluído na migração e na Edge Function (criação, consulta, envio e revogação). Implantar controles adicionais de borda, observabilidade e auditoria de eventos. Verificar o cabeçalho IP confiável fornecido pelo gateway.
-7. Testar duas empresas e usuários distintos: RLS, create, view, submit, expiração, duplicidade e acesso negado entre empresas.
-8. Publicar interface somente depois da aprovação. Enquanto isso, manter homologação atual intacta.
+O banco atual tem 32 perguntas ativas com códigos válidos, oito para cada dimensão: **Constância**, **Ação**, **Estrutura** e **Conexão**. A RLS de avaliações e respostas usa `s360_acesso`. Usuários vinculados ficam limitados às empresas autorizadas e o administrador global ativo mantém acesso a todas as empresas, como previsto no modelo atual.
 
-## Resumo do fluxo
-Administrador autenticado seleciona empresa e participante, confirma geração; servidor verifica as permissões via Supabase e emite token aleatório, guardando apenas SHA-256. Link único é compartilhado manualmente pelo administrador por WhatsApp ou e-mail. Participante lê o aviso, responde 32 perguntas e envia. Transação no banco cria avaliação e respostas e encerra o token. Relatório fica acessível somente na área restrita após testes de RLS.
+- `20261125_map360_convites_v19.sql` cria convites e controle de volume de requisições. A rotina transacional bloqueia o convite para validar e gravar uma avaliação, suas 32 respostas e o encerramento do link.
+- `20261127_map360_devolutivas_v19.sql` cria uma ficha por avaliação. A chave estrangeira composta vincula convite concluído e devolutiva à avaliação da mesma empresa.
+- A Edge Function confere o usuário e o perfil ativo no Supabase em cada ação administrativa. O acesso direto às tabelas de convites e devolutivas e às rotinas de conclusão e rate limit fica restrito ao backend.
+- O participante usa um token aleatório de uso único. O servidor guarda apenas o hash. Listagem e relatórios não reapresentam o link original.
+- O relatório exige uma avaliação autorizada e 32 respostas válidas. A ficha registra a situação, a data e a síntese da devolutiva, os compromissos de PDI, o responsável e a próxima revisão. É possível anexar a ficha salva ao imprimir o relatório.
 
-## Pendências
-- Verificar migração contra esquema real de produção.
-- Finalizar política de privacidade e critérios de retenção.
-- Interface administrativa para listar convites por empresa e permitir a revogação; endpoint revoke já preparado.
-- Validar o mecanismo de rate limiting com o cabeçalho de IP real do gateway e configurar mitigação para abuso distribuído.
-- Testes funcionais e de segurança com duas empresas.
-- Implantar a migração e a Supabase Edge Function e conectar domínio.
-- Testar a correspondência dos tipos e constraints do banco real com a migração (sem acesso ao projeto nesta etapa).
-- Política de contatos e descarte de dados pessoais em conformidade com a LGPD.
+## Testes locais
 
-**MAP 360° permanece um instrumento experimental, não validado para contratação ou decisões automatizadas.**
+Na raiz do repositório, com Node.js 24:
 
-## Painel de acompanhamento e devolutiva (incluído na homologação)
-- A tela de convites permite selecionar empresa, listar até 200 convites por data e visualizar participante, finalidade, criação, vencimento e status (pendente, concluído, expirado ou revogado).
-- Gestor administrador pode solicitar revogação de convite pendente via endpoint autorizado; o link é invalidado sem expor token.
-- Para convites concluídos, o botão **Relatório completo** direciona à área restrita com empresa e avaliação selecionadas. A consulta exige autenticação, perfil administrador ativo, autorização de empresa via RLS e 32 respostas válidas.
-- O relatório analítico preserva as dez seções (incluindo quatro dimensões, PDI e orientações de devolutiva) e identifica o participante na impressão PDF.
-- Não há envio automático do relatório ao convidado; a devolutiva será conduzida pelo profissional responsável.
-- A lista não fornece link original novamente; o token só é apresentado no ato da geração por segurança.
-- O estado 'concluído' depende do registro transacional das 32 respostas.
-- Nenhum desses recursos está implantado no Supabase ou publicado para uso real até testes de homologação.
+```sh
+npm ci --prefix tests
+node tests/map360-convites-v1_9.test.js
+node tests/map360-homologacao.test.cjs
+node tests/map360-edge.test.cjs
+```
 
-## Registro de devolutiva e PDI — extensão da homologação
+A suíte aplica as duas migrações em PostgreSQL local, com o recorte de esquema e RLS em `tests/map360-schema-homologacao.sql` e dados fictícios. Verifica permissões por empresa, rejeição de convites expirados e revogados, gravação das 32 respostas, recusa à reutilização, vínculo da devolutiva/PDI e renderização das dez seções do relatório. O teste do handler simula Auth e a API de dados do Supabase. As duas tentativas locais de consumo são enfileiradas pelo cliente de teste. O teste de concorrência real requer conexões independentes no ambiente isolado.
 
-- Migração adicional: `supabase/migrations/20261127_map360_devolutivas_v19.sql`. Uma ficha por avaliação, vinculada à empresa, com situação, data da devolutiva, síntese, compromissos do PDI, responsável, próxima revisão e atualização.
-- A Edge Function `map360-convites` disponibiliza `get_feedback` e `save_feedback` somente para administrador autenticado e empresa acessível. O servidor também verifica que a avaliação pertence à empresa e que existem 32 respostas válidas.
-- A área restrita mostra o formulário **Registro da devolutiva e acompanhamento do PDI** após consultar o Relatório Analítico completo. O registro é separado das respostas originais: a devolutiva não modifica as pontuações.
-- A funcionalidade continua **não implantada** no Supabase e **não publicada** no site principal. A migração deve ser revisada contra o esquema existente, as rotinas e permissões devem ser testadas com duas empresas, e os dados pessoais precisam de regras definidas de retenção.
-- A devolutiva deve ser conduzida por responsável humano e pactuada com o participante. O MAP 360° permanece experimental, sem comprovação de aptidão ou diagnóstico.
+## Homologação hospedada
 
-## Impressão do relatório e anexo da devolutiva
-- O Relatório Analítico mantém as dez seções existentes.
-- O administrador poderá selecionar **Incluir no PDF a devolutiva e o PDI já registrados**. O anexo será gerado somente a partir de dados previamente recuperados ou salvos no Supabase para a avaliação autorizada.
-- O anexo é opcional e contém situação, data, responsável, síntese, compromissos e próxima revisão. Sem dados gravados, a opção não adicionará informações fictícias.
-- A opção não dispara e-mail ao participante e não altera o questionário.
+O projeto principal não possui branches. Como o Supabase exige plano Pro para esse recurso, foi criado um projeto separado em São Paulo. Em homologação, foram confirmados o login real, os bloqueios entre empresas via API, a geração, listagem e revogação do convite, as 32 respostas e a gravação de devolutiva/PDI. Duas submissões HTTP simultâneas produziram uma única conclusão.
+
+A versão de teste da Edge Function usa a origem `http://localhost:4173` e uma chave de rate limit derivada do segredo do próprio projeto de homologação. Nenhum segredo foi incluído no código versionado. Para repetir o teste hospedado, defina `MAP360_TEST_URL`, `MAP360_TEST_ORIGIN`, `MAP360_TEST_KEY` e `MAP360_TEST_CREDENTIALS` (arquivo local com administrador e dois editores fictícios) antes de rodar `node tests/map360-supabase-homologacao.test.cjs`.
+
+Para preparar um novo ambiente ou repetir a configuração:
+
+1. Reproduzir o esquema e as políticas no destino isolado, cadastrar duas empresas e criar contas de teste com vínculos distintos e um administrador global. Aplicar as migrações em ordem, executar os advisors e conferir as permissões de API e RPC.
+2. Configurar `MAP360_SITE_ORIGIN` com a origem exata do site de homologação, na raiz do domínio, e `MAP360_RATE_SALT` com segredo forte. A função também utiliza `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` do próprio ambiente.
+3. Implantar `map360-convites` com `verify_jwt=false` no gateway, pois o participante usa token de convite sem conta. A função valida JWT nas ações administrativas e o token nas ações do participante.
+4. Na cópia estática de homologação, configurar `js/s360-supabase-config.js` com a URL e a chave publicável do projeto isolado e a origem da interface. Usar a mesma origem da Edge Function. A configuração versionada só permite o projeto principal nos domínios indicados no próprio arquivo.
+5. Testar no navegador o login, a criação, listagem e revogação, a resposta às 32 questões, a abertura do relatório pelo convite, o PDF com e sem PDI e a recuperação da devolutiva após recarregar. Repetir com usuários de empresas distintas e duas solicitações simultâneas. Verificar o cabeçalho de IP confiável fornecido pelo gateway, a aplicação dos limites de requisições e o comportamento CORS no domínio real.
+
+## Pendências para produção
+
+- Confirmar a política de privacidade e retenção de contatos, respostas e devolutivas. Antes de promover para produção, repetir o teste de CORS e rate limit na origem definitiva.
+- Revisar os avisos existentes do Supabase sobre exposição de `s360_admin` e `s360_acesso` via RPC e a proteção de senhas vazadas. As políticas e funções existentes não foram modificadas.

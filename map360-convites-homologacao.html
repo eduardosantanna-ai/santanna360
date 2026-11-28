@@ -64,13 +64,14 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;
 <p class="small">Instrumento experimental, ainda não validado para decisões automáticas de contratação ou diagnóstico psicológico.</p>
 </section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/s360-supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/dist/umd/supabase.js"></script>
 <script>
 'use strict';
 const el=id=>document.getElementById(id);
-const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
+const client=window.S360Supabase.origins.includes(location.origin) && window.supabase?.createClient(window.S360Supabase.url,window.S360Supabase.key);
 let companies=[], textDraft='', lastLink='', lastChannel='', lastContact='';
-const EDGE='https://okvikkifrsbovbppywgp.supabase.co/functions/v1/map360-convites';
+const EDGE=window.S360Supabase.url + '/functions/v1/map360-convites';
 function refreshContact(){
  const email=el('canal').value==='email';
  el('emailField').classList.toggle('hidden',!email);
@@ -87,7 +88,7 @@ async function invoke(action,data={}){
  const session=await client.auth.getSession(),jwt=session.data.session?.access_token;
  if(!jwt)throw Error('Sua sessão expirou. Faça login novamente.');
  const response=await fetch(EDGE,{method:'POST',cache:'no-store',mode:'cors',referrerPolicy:'no-referrer',
- headers:{'Content-Type':'application/json','apikey':'sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC','Authorization':'Bearer '+jwt},
+ headers:{'Content-Type':'application/json','apikey':window.S360Supabase.key,'Authorization':'Bearer '+jwt},
  body:JSON.stringify({action,...data})});
  const json=await response.json().catch(()=>({}));
  if(!response.ok)throw Error(json.error||'Serviço de convites indisponível');
@@ -170,7 +171,7 @@ el('draftForm').addEventListener('submit',async event=>{
   const session=await client.auth.getSession(),jwt=session.data.session?.access_token;
   if(!jwt)throw Error('Sua sessão expirou. Faça login novamente.');
   const response=await fetch(EDGE,{method:'POST',cache:'no-store',mode:'cors',referrerPolicy:'no-referrer',
-   headers:{'Content-Type':'application/json','apikey':'sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC','Authorization':'Bearer '+jwt},
+   headers:{'Content-Type':'application/json','apikey':window.S360Supabase.key,'Authorization':'Bearer '+jwt},
    body:JSON.stringify({action:'create',empresa_id:id,participante_nome:name,finalidade,expira_em:expiry.toISOString(),
     email:channel==='email'?contact:null,telefone:channel==='whatsapp'?contact:null})});
   const json=await response.json().catch(()=>({}));
