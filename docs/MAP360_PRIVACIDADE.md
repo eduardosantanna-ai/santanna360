@@ -23,6 +23,27 @@ Os prazos são propostas operacionais, sujeitos a confirmação por finalidade e
 - A função `map360_aplicar_retencao()` devolve contagens de contatos removidos, fichas excluídas e avaliações excluídas. A exclusão da avaliação também remove suas respostas e o convite associado pelas chaves estrangeiras. O relatório consultado na plataforma é calculado a partir das respostas.
 - Antes de agendar a execução com dados reais, revisar as exceções de conservação aplicáveis a cada operação e definir como suspender uma exclusão quando houver obrigação de preservar dados. Nenhum arquivo exportado é apagado pela função.
 
+## Procedimento de conservação e descarte
+
+**Responsável operacional.** Eduardo Sant’Anna coordena o registro e a revisão pelo canal contato@santanna360.com.br. Quando a empresa cliente for a controladora, registrar a decisão ou instrução dela antes de descartar ou prorrogar a conservação.
+
+### Exceções de conservação
+
+1. Registrar em área restrita o código da empresa e os identificadores dos registros afetados, o motivo e seu fundamento, o aprovador, a data de início e a data de revisão. Limitar a exceção aos dados necessários. Revisar a cada 90 dias ou antes, se a obrigação terminar.
+2. Conferir o registro de exceções antes de cada execução. Como a função atual atua sobre todo o conjunto elegível e não consulta exceções, suspender a execução se houver registro protegido elegível. Retomar somente quando houver um filtro testado ou quando a exceção deixar de se aplicar. Revisar fichas de PDI em aberto na mesma conferência.
+3. Registrar data, responsável, escopo e contagens de descarte. Guardar a evidência em área restrita, sem copiar respostas, contatos ou PDFs para o registro operacional.
+
+### Backups
+
+- Inventariar as cópias do Supabase e eventuais exportações manuais. Registrar prazo efetivo de rotação, acesso e responsável. Confirmar a configuração real antes de comunicar prazos aos participantes.
+- Restringir os backups à recuperação autorizada. Em caso de restauração, usar ambiente isolado, conferir as exceções vigentes e reaplicar os descartes já registrados antes de reabrir o acesso. Validar a restauração com dados fictícios antes da primeira execução em produção.
+
+### PDFs exportados
+
+- Exportar apenas quando necessário à devolutiva. Incluir o anexo de PDI somente quando for útil ao destinatário autorizado. Usar armazenamento com acesso restrito e registrar destinatário, local da cópia e data de revisão ou descarte.
+- Aplicar às cópias o prazo acordado para o conteúdo. Se um PDF combinar relatório e PDI, revisar o arquivo no primeiro vencimento. Se apenas o PDI precisar ser preservado, gerar uma versão com os dados necessários e eliminar o PDF original onde houver controle sobre a cópia.
+- Para arquivos enviados à empresa cliente, encaminhar a instrução de descarte ao responsável e registrar a confirmação ou pendência. A exclusão no Supabase não remove arquivos baixados.
+
 ## Pedidos dos participantes
 
 Receber pelo canal oficial, registrar data e assunto, confirmar a identidade com dados proporcionais, encaminhar à empresa controladora quando aplicável e registrar a resposta e as providências. Evitar solicitar respostas do questionário ou documentos pessoais por e-mail quando houver outra forma de verificação.
