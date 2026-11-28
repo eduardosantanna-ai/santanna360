@@ -1,0 +1,8 @@
+{
+  "name": "santanna360-map360-tests",
+  "private": true,
+  "devDependencies": {
+    "@electric-sql/pglite": "0.6.1",
+    "linkedom": "0.18.12"
+  }
+}

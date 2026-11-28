@@ -1,0 +1,25 @@
+name: MAP 360° v1.9 - testes de homologação local
+on:
+  pull_request:
+    paths:
+      - 'map360-*.html'
+      - 'login.html'
+      - 'painel.html'
+      - 'js/**'
+      - 'supabase/**'
+      - 'tests/**'
+      - '.github/workflows/map360-convites-v1_9.yml'
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --prefix tests
+      - run: node tests/map360-convites-v1_9.test.js
+      - run: node tests/map360-homologacao.test.cjs
+      - run: node --disable-warning=ExperimentalWarning tests/map360-edge.test.cjs

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<title>MAP 360° | Responder avaliação — Sant’Anna 360</title>
+<style>
+:root{--blue:#163247;--line:#d8e2eb}*{box-sizing:border-box}body{margin:0;background:#f5f7f9;color:#253747;font:16px/1.55 system-ui,sans-serif}header{background:var(--blue);color:white;padding:22px max(18px,calc((100vw - 850px)/2))}h1{margin:0;font-size:27px}main{max-width:850px;margin:24px auto;padding:0 18px 50px}section{background:white;border:1px solid var(--line);border-radius:12px;padding:22px;margin:14px 0}fieldset{border:1px solid var(--line);border-radius:9px;margin:15px 0;padding:14px}legend{font-weight:700;padding:0 8px}fieldset label{margin-right:13px;display:inline-flex;align-items:center;gap:4px;padding:6px 0}button{font:inherit;cursor:pointer;padding:12px 19px;border:0;border-radius:8px;background:var(--blue);color:white}button:disabled{opacity:.5}p.note{font-size:14px;color:#526475}.alert{background:#fff1d5;padding:12px;border-radius:8px}.error{color:#9c2929}.hidden{display:none}
+</style></head>
+<body><header><h1>MAP 360° — Avaliação individual</h1><div>Sant’Anna 360 · Questionário experimental · 32 afirmações</div></header>
+<main><section id="opening"><p id="status" role="status" aria-live="polite">Verificando o convite...</p></section>
+<section id="survey" class="hidden"><h2>Seu questionário</h2><p id="intro"></p>
+<div class="alert" aria-label="Aviso de privacidade do MAP 360°">
+<p><strong>Privacidade no MAP 360°.</strong> A Sant’Anna 360 registra seu nome, o contato fornecido para o convite e suas respostas para a finalidade indicada acima. As respostas permitem elaborar seu Relatório Analítico e, quando aplicável, registrar a devolutiva e o Plano de Desenvolvimento Individual (PDI).</p>
+<p>O acesso é limitado aos profissionais autorizados da Sant’Anna 360 e, em avaliações organizadas para uma empresa, aos profissionais autorizados envolvidos na avaliação e na devolutiva. O MAP 360° é experimental. Seus resultados exigem revisão humana e não devem, isoladamente, fundamentar decisões de trabalho ou diagnóstico psicológico.</p>
+<p><strong>Responsável pelo atendimento de privacidade:</strong> Eduardo Sant’Anna. Para saber como seus dados são usados, pedir acesso ou correção, solicitar a exclusão quando aplicável ou conhecer os critérios de conservação, escreva para <a href="mailto:contato@santanna360.com.br">contato@santanna360.com.br</a>.</p>
+</div>
+<p>Marque uma resposta para cada afirmação: 1 — discordo totalmente; 2 — discordo; 3 — nem concordo nem discordo; 4 — concordo; 5 — concordo totalmente.</p>
+<form id="questions"></form>
+<label><input type="checkbox" id="privacy" required> Li as informações de finalidade e privacidade acima e compreendo que minhas respostas serão registradas para esta avaliação.</label>
+<p class="note">A confirmação de leitura não substitui a definição de base legal pelo responsável pelo tratamento. Não compartilhe seu link individual.</p>
+<p><button id="submit" type="button">Enviar respostas</button></p></section>
+<section id="done" class="hidden"><h2>Avaliação concluída</h2><p>Suas respostas foram recebidas. Obrigado por participar.</p></section>
+</main>
+<script src="js/s360-supabase-config.js"></script>
+<script>
+'use strict';
+const URL=window.S360Supabase.url + '/functions/v1/map360-convites';
+const KEY=window.S360Supabase.key;
+const el=id=>document.getElementById(id);
+const fragment=new URLSearchParams(location.hash.slice(1)),token=fragment.get('token')||'';
+history.replaceState(null,'',location.pathname); // Remove token from visible URL immediately.
+let questions=[],submitting=false;
+async function call(action,data){
+ const response=await fetch(URL,{method:'POST',mode:'cors',cache:'no-store',referrerPolicy:'no-referrer',
+ headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({action,token,...data})});
+ const json=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(json.error||'Serviço temporariamente indisponível');
+ return json;
+}
+async function initialize(){
+ if(!window.S360Supabase.origins.includes(location.origin)){el('status').textContent='Ambiente indisponível.';return;}
+ if(!/^[A-Za-z0-9_-]{43}$/.test(token)){el('status').textContent='Este link individual é inválido ou está incompleto.';return;}
+ try{
+  const data=await call('view',{});questions=data.perguntas;
+  el('intro').textContent='Participante: '+data.participante_nome+' · Finalidade: '+({
+   desenvolvimento:'Desenvolvimento profissional',autoconhecimento:'Autoconhecimento',formacao:'Ação formativa'
+  }[data.finalidade]||data.finalidade)+'.';
+  const form=el('questions');
+  questions.forEach((q,i)=>{
+   const fs=document.createElement('fieldset');const legend=document.createElement('legend');
+   legend.textContent=(i+1)+'. '+q.enunciado;fs.append(legend);
+   for(let n=1;n<=5;n++){const label=document.createElement('label'),radio=document.createElement('input');
+    radio.type='radio';radio.name='q'+i;radio.value=String(n);radio.required=true;
+    label.append(radio,document.createTextNode(' '+n));fs.append(label);
+   }form.append(fs);
+  });
+  el('opening').classList.add('hidden');el('survey').classList.remove('hidden');
+ }catch(e){el('status').textContent=e.message;el('status').className='error';}
+}
+el('submit').addEventListener('click',async()=>{
+ if(submitting)return;
+ if(!el('privacy').checked){alert('Leia e confirme as informações de privacidade para continuar.');return;}
+ const answers=questions.map((q,i)=>{const checked=el('questions').querySelector('input[name="q'+i+'"]:checked');return checked?{pergunta_id:q.id,nota:Number(checked.value)}:null;});
+ if(answers.some(a=>!a)){alert('Responda às 32 afirmações para concluir.');return;}
+ if(!confirm('Confirma o envio das 32 respostas? O link será encerrado após a conclusão.'))return;
+ submitting=true;el('submit').disabled=true;el('submit').textContent='Enviando...';
+ try{await call('submit',{respostas:answers,confirmacao_privacidade:true});el('survey').classList.add('hidden');el('done').classList.remove('hidden');}
+ catch(e){alert(e.message);submitting=false;el('submit').disabled=false;el('submit').textContent='Enviar respostas';}
+});
+initialize();
+</script></body></html>

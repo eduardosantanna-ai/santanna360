@@ -15,90 +15,191 @@ textarea{min-height:95px;resize:vertical}button{background:var(--navy);border:0;
 button.secondary{background:#e9eef3;color:var(--navy)}
 button:disabled{opacity:.5;cursor:not-allowed}
 .actions{display:flex;gap:10px;flex-wrap:wrap}.hidden{display:none!important}
-.small{font-size:13px;color:#586a7c}
+.small{font-size:13px;color:#586a7c}th,td{padding:10px;border-bottom:1px solid #dce3e8;vertical-align:top;font-size:14px}#tracking button{padding:7px 10px;font-size:13px;margin:3px}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;border-radius:8px}
 @media print{header,.no-print,form{display:none!important}body{background:white}.card{border:0}}
 </style></head>
-<body><header><h1>MAP 360° | Convites individuais</h1><small>Homologação v1.8 · Sant’Anna 360</small><div><a href="map360-restrito.html">Voltar à consulta de avaliações</a></div></header>
+<body><header><h1>MAP 360° | Convites individuais</h1><small>Convites v1.9 · Sant’Anna 360</small><div><a href="map360-restrito.html">Voltar à consulta de avaliações</a></div></header>
 <main>
-<div class="warning"><strong>Somente demonstração administrativa.</strong> Esta tela prepara uma prévia de convite; não gera token, não cria avaliação, não envia email ou WhatsApp e não grava informações no Supabase. Não informe dados reais de colaboradores.</div>
+<div class="warning"><strong>Implantação condicionada.</strong> A geração de links individuais requer a migração e a função segura no Supabase. O site não envia mensagens automaticamente. Somente utilize dados reais após a validação das permissões e do aviso de privacidade.</div>
 <p class="status" id="status" aria-live="polite">Verificando autorização...</p>
 <section class="card hidden" id="workspace">
 <h2>Preparar convite</h2>
 <form id="draftForm">
 <label>Empresa autorizada<select id="empresa" required></select></label>
-<label>Nome do participante (usar dados de teste)<input id="nome" placeholder="Participante Teste" maxlength="80" required autocomplete="off"></label>
+<label>Nome do participante<input id="nome" placeholder="Participante Teste" maxlength="80" required autocomplete="off"></label>
 <label>Finalidade da avaliação<select id="finalidade" required><option value="desenvolvimento">Desenvolvimento profissional</option><option value="autoconhecimento">Autoconhecimento</option><option value="formacao">Ação formativa</option></select></label>
 <label>Prazo pretendido para resposta<input id="prazo" type="date" required></label>
 <label>Canal preferido para eventual envio<select id="canal"><option value="email">E-mail individual</option><option value="whatsapp">WhatsApp individual</option></select></label>
-<label id="emailField">E-mail do participante (usar contato de teste)<input id="email" type="email" placeholder="teste@exemplo.com" maxlength="254" autocomplete="off" inputmode="email"></label>
-<label id="phoneField" class="hidden">WhatsApp do participante (usar número de teste com DDD)<input id="phone" type="tel" placeholder="(27) 99999-9999" maxlength="20" autocomplete="off" inputmode="tel"></label>
-<p class="small">O contato será usado apenas para validar a prévia nesta página, sem gravação ou envio. Não insira dados pessoais reais nesta etapa. O link individual depende da implantação de um serviço protegido.</p>
-<div class="actions"><button type="submit">Preparar prévia do convite</button><button type="reset" class="secondary">Limpar campos</button></div>
+<label id="emailField">E-mail do participante<input id="email" type="email" placeholder="teste@exemplo.com" maxlength="254" autocomplete="off" inputmode="email"></label>
+<label id="phoneField" class="hidden">WhatsApp do participante (com DDD)<input id="phone" type="tel" placeholder="(27) 99999-9999" maxlength="20" autocomplete="off" inputmode="tel"></label>
+<p class="small">Depois de ativado o backend, o convite será registrado na empresa selecionada. O envio por WhatsApp abre uma conversa com a mensagem pronta; o envio por e-mail abrirá o aplicativo de e-mail do administrador. Nenhum disparo é automático.</p>
+<div class="actions"><button type="submit">Gerar link individual</button><button type="reset" class="secondary">Limpar campos</button></div>
 </form>
 </section>
 <section class="card hidden" id="preview">
-<h2>Prévia do convite</h2>
+<h2>Convite individual gerado</h2>
 <pre id="previewText"></pre>
-<p class="warning"><strong>Link individual:</strong> indisponível nesta fase. Nunca reutilize a demonstração pública como link de convite.</p>
-<div class="actions no-print"><button id="copy" type="button">Copiar texto da prévia</button><button id="hide" class="secondary" type="button">Fechar prévia</button></div>
+<p class="warning"><strong>Uso individual:</strong> o link é exclusivo, expira no prazo indicado e deixa de funcionar após o envio das respostas. Compartilhe somente com o destinatário.</p>
+<div class="actions no-print"><button id="copy" type="button">Copiar texto do convite</button><button id="share" type="button">Abrir canal de envio</button><button id="hide" class="secondary" type="button">Fechar prévia</button></div>
+</section>
+<section class="card hidden" id="tracking">
+<h2>Acompanhamento de convites</h2>
+<p class="small">A consulta apresenta somente os convites vinculados à empresa escolhida e autorizada. O link individual não pode ser recuperado após a geração: para reenviar, será preciso criar outro convite.</p>
+<div class="actions"><button id="refreshTracking" type="button">Atualizar convites</button></div>
+<p id="trackingTotals" class="small" aria-live="polite"></p>
+<p class="status" id="trackingStatus" role="status" aria-live="polite">Selecione uma empresa para consultar os convites.</p>
+<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;text-align:left">
+<thead><tr><th>Participante</th><th>Finalidade</th><th>Criado em</th><th>Validade</th><th>Situação</th><th>Devolutiva</th><th>Ações</th></tr></thead>
+<tbody id="trackingRows"></tbody></table></div>
 </section>
 <section class="card">
-<h2>Para habilitar envios reais</h2>
+<h2>Requisitos de segurança</h2>
 <ol>
 <li>Validar acesso e isolamento entre duas empresas de teste.</li>
-<li>Implantar função segura para criar e expirar tokens individuais, sem expor chaves privilegiadas.</li>
+<li>Executar e testar a migração SQL e implantar a Edge Function de convites no Supabase.</li>
 <li>Apresentar aviso de privacidade e registrar a base legal adequada antes da coleta de respostas.</li>
 <li>Testar preenchimento, revogação e relatório vinculado à empresa.</li>
 </ol>
 <p class="small">Instrumento experimental, ainda não validado para decisões automáticas de contratação ou diagnóstico psicológico.</p>
 </section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/s360-supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/dist/umd/supabase.js"></script>
 <script>
 'use strict';
 const el=id=>document.getElementById(id);
-const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
-let companies=[];
-let textDraft='';
-function refreshContact(){const email=el('canal').value==='email';el('emailField').classList.toggle('hidden',!email);el('phoneField').classList.toggle('hidden',email);el('email').required=email;el('phone').required=!email;el('email').disabled=!email;el('phone').disabled=email;}
-el('canal').addEventListener('change',()=>{refreshContact();el('preview').classList.add('hidden');});
+const client=window.S360Supabase.origins.includes(location.origin) && window.supabase?.createClient(window.S360Supabase.url,window.S360Supabase.key);
+let companies=[], textDraft='', lastLink='', lastChannel='', lastContact='';
+const EDGE=window.S360Supabase.url + '/functions/v1/map360-convites';
+function refreshContact(){
+ const email=el('canal').value==='email';
+ el('emailField').classList.toggle('hidden',!email);
+ el('phoneField').classList.toggle('hidden',email);
+ el('email').required=email;el('phone').required=!email;el('email').disabled=!email;el('phone').disabled=email;
+}
+el('canal').addEventListener('change',()=>{refreshContact();hidePreview();});
 function status(message,error=false){el('status').textContent=message;el('status').className='status'+(error?' error':' ok');}
 function validDate(x){if(!/^\d{4}-\d{2}-\d{2}$/.test(x))return false;const d=new Date(x+'T00:00:00');return !Number.isNaN(d.valueOf())&&d.toISOString().slice(0,10)===x;}
+function hidePreview(){textDraft='';lastLink='';lastContact='';el('previewText').textContent='';el('preview').classList.add('hidden');}
+const prettyDate=value=>{const d=new Date(value);return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR');};
+function trackingMessage(message,error=false){el('trackingStatus').textContent=message;el('trackingStatus').className='status'+(error?' error':' ok');}
+async function invoke(action,data={}){
+ const session=await client.auth.getSession(),jwt=session.data.session?.access_token;
+ if(!jwt)throw Error('Sua sessão expirou. Faça login novamente.');
+ const response=await fetch(EDGE,{method:'POST',cache:'no-store',mode:'cors',referrerPolicy:'no-referrer',
+ headers:{'Content-Type':'application/json','apikey':window.S360Supabase.key,'Authorization':'Bearer '+jwt},
+ body:JSON.stringify({action,...data})});
+ const json=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(json.error||'Serviço de convites indisponível');
+ return json;
+}
+async function refreshTracking(){
+ const id=el('empresa').value;if(!companies.some(c=>c.id===id))return;
+ trackingMessage('Consultando convites autorizados...');
+ el('trackingTotals').textContent='';
+ el('trackingRows').replaceChildren();
+ try{
+ const data=await invoke('list',{empresa_id:id});
+ if(el('empresa').value!==id)return;
+ const items=data.convites||[];
+ const count=key=>items.filter(x=>x.estado_exibicao===key).length;
+ const feedbackPending=items.filter(x=>x.estado_exibicao==='concluido'&&(!x.devolutiva_status||x.devolutiva_status==='pendente')).length;
+ el('trackingTotals').textContent='Total: '+items.length+' · Pendentes: '+count('pendente')+' · Concluídos: '+count('concluido')+' · Expirados: '+count('expirado')+' · Revogados: '+count('revogado')+' · Aguardando devolutiva: '+feedbackPending;
+ for(const c of items){
+  const tr=document.createElement('tr');
+  for(const value of [c.participante_nome,c.finalidade,prettyDate(c.criado_em),prettyDate(c.expira_em),c.estado_exibicao||c.estado]){
+   const td=document.createElement('td');td.textContent=value||'—';tr.append(td);
+  }
+  const statusCell=document.createElement('td');
+  statusCell.textContent=c.estado_exibicao==='concluido'?(c.devolutiva_status==='realizada'?'Realizada':c.devolutiva_status==='acompanhamento'?'Em acompanhamento':'Pendente'):'—';
+  tr.append(statusCell);
+  const actions=document.createElement('td');
+  if(c.estado_exibicao==='concluido'&&c.avaliacao_id){
+   const a=document.createElement('a');
+   a.href='map360-restrito.html?empresa='+encodeURIComponent(id)+'&avaliacao='+encodeURIComponent(c.avaliacao_id);
+   a.textContent='Relatório completo';actions.append(a);
+  }else if(c.estado_exibicao==='pendente'){
+   const revoke=document.createElement('button');revoke.type='button';revoke.textContent='Revogar';
+   revoke.onclick=async()=>{
+    if(!confirm('Revogar este convite? O participante não poderá mais utilizar o link.'))return;
+    revoke.disabled=true;
+    try{await invoke('revoke',{id:c.id,empresa_id:id});await refreshTracking();}
+    catch(e){trackingMessage('Falha na revogação: '+e.message,true);revoke.disabled=false;}
+   };actions.append(revoke);
+  }else{actions.textContent='—';}
+  tr.append(actions);el('trackingRows').append(tr);
+ }
+ trackingMessage(items.length+' convite(s) encontrado(s) (até '+(data.limite||200)+').');
+ }catch(e){trackingMessage('Não foi possível carregar convites: '+e.message,true);}
+}
+el('empresa').addEventListener('change',()=>{hidePreview();refreshTracking();});
+el('refreshTracking').addEventListener('click',refreshTracking);
+
 async function init(){
  try{
   if(!client)throw Error('Biblioteca de autenticação não disponível.');
   const {data,error}=await client.auth.getUser();
   if(error||!data.user){location.replace('login.html');return;}
   const profile=await client.from('perfis').select('ativo,administrador').eq('id',data.user.id).maybeSingle();
-  if(profile.error||!profile.data?.ativo||!profile.data?.administrador)throw Error('Homologação reservada ao administrador ativo.');
+  if(profile.error||!profile.data?.ativo||!profile.data?.administrador)throw Error('Acesso reservado ao administrador ativo.');
   const e=await client.from('empresas').select('id,razao_social,nome_fantasia').order('razao_social').limit(100);
   if(e.error)throw e.error;
   companies=e.data||[];
   for(const row of companies){const opt=document.createElement('option');opt.value=row.id;opt.textContent=row.nome_fantasia||row.razao_social||'Empresa';el('empresa').append(opt);}
-  if(!companies.length)throw Error('Nenhuma empresa visível para a conta.');
-  el('workspace').classList.remove('hidden');
-  status('Acesso de administrador confirmado. As prévias não serão salvas.');
+  if(!companies.length)throw Error('Nenhuma empresa acessível.');
+  el('workspace').classList.remove('hidden');el('tracking').classList.remove('hidden');status('Acesso administrativo confirmado. Para gerar convites, o serviço seguro deve estar implantado.');
+  await refreshTracking();
  }catch(e){status('Acesso indisponível: '+e.message,true);}
  finally{document.body.classList.add('ready');}
 }
-el('draftForm').addEventListener('submit',event=>{
- event.preventDefault();el('preview').classList.add('hidden');
+el('draftForm').addEventListener('submit',async event=>{
+ event.preventDefault();hidePreview();
+ const button=el('draftForm').querySelector('button[type="submit"]');
  const id=el('empresa').value,company=companies.find(x=>x.id===id);
- const name=el('nome').value.trim(),end=el('prazo').value,finalidade=el('finalidade').selectedOptions[0]?.textContent;
- const channel=el('canal').value,contact=channel==='email'?el('email').value.trim():el('phone').value.trim();
- if(channel==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)){status('Informe um endereço de e-mail de teste válido.',true);return;}
- if(channel==='whatsapp'&&!/^\d{10,11}$/.test(contact.replace(/\D/g,''))){status('Informe um WhatsApp de teste com DDD (10 ou 11 dígitos).',true);return;}
- if(!company||!name||!validDate(end)||name.length>80){status('Confira empresa, participante e data. Nenhum convite foi criado.',true);return;}
- if(end<new Date().toISOString().slice(0,10)){status('A validade do convite não pode estar no passado.',true);return;}
- const companyName=company.nome_fantasia||company.razao_social||'Empresa';
- textDraft='PRÉVIA DE CONVITE — MODO DE TESTE\n\nOlá, '+name+'!\n\n'+companyName+' está preparando um convite para o MAP 360° da Sant’Anna 360, um instrumento experimental de preferências comportamentais com 32 afirmações.\nFinalidade: '+finalidade+'.\nPrazo previsto: '+end.split('-').reverse().join('/')+'.\n\nAntes de responder, consulte o aviso de privacidade e a finalidade específica do tratamento.\n\n[LINK INDIVIDUAL AINDA NÃO IMPLEMENTADO]\n\nEsta mensagem é somente uma simulação e não foi enviada.';
- el('previewText').textContent='Canal selecionado: '+(channel==='email'?'E-mail':'WhatsApp')+'\nContato informado (não enviado): '+contact+'\n\n'+textDraft;el('preview').classList.remove('hidden');
- status('Prévia do convite preparada. Nenhuma informação foi enviada ou registrada.');
+ const name=el('nome').value.trim(),end=el('prazo').value;
+ const finalidade=el('finalidade').value,finalidadeLabel=el('finalidade').selectedOptions[0]?.textContent;
+ const channel=el('canal').value,contact=channel==='email'?el('email').value.trim():el('phone').value.trim().replace(/\D/g,'');
+ if(!company||!name||name.length>80||!validDate(end)){status('Confira empresa, participante e prazo.',true);return;}
+ if(channel==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)){status('E-mail inválido.',true);return;}
+ if(channel==='whatsapp'&&!/^\d{10,11}$/.test(contact)){status('WhatsApp inválido: informe DDD e número.',true);return;}
+ const expiry=new Date(end+'T23:59:59-03:00');
+ if(expiry<=new Date()||expiry-new Date()>30*86400000){status('Prazo deve ser futuro e de até 30 dias.',true);return;}
+ if(!confirm('Gerar um convite individual para '+name+' na empresa '+(company.nome_fantasia||company.razao_social)+'? Esse registro ficará salvo no banco e o link deverá ser compartilhado somente com o participante.'))return;
+ button.disabled=true;status('Solicitando link individual ao serviço seguro...');
+ try{
+  const session=await client.auth.getSession(),jwt=session.data.session?.access_token;
+  if(!jwt)throw Error('Sua sessão expirou. Faça login novamente.');
+  const response=await fetch(EDGE,{method:'POST',cache:'no-store',mode:'cors',referrerPolicy:'no-referrer',
+   headers:{'Content-Type':'application/json','apikey':window.S360Supabase.key,'Authorization':'Bearer '+jwt},
+   body:JSON.stringify({action:'create',empresa_id:id,participante_nome:name,finalidade,expira_em:expiry.toISOString(),
+    email:channel==='email'?contact:null,telefone:channel==='whatsapp'?contact:null})});
+  const json=await response.json().catch(()=>({}));
+  if(!response.ok||!json.link)throw Error(json.error||'Serviço de convites ainda não está disponível. É necessário ativar a integração no Supabase.');
+  const companyName=company.nome_fantasia||company.razao_social||'Empresa';
+  lastLink=json.link;lastChannel=channel;lastContact=contact;
+  textDraft='Olá, '+name+'!\n\nVocê recebeu um convite da '+companyName+' para responder ao MAP 360° da Sant’Anna 360, um instrumento experimental de preferências comportamentais com 32 afirmações.\nFinalidade: '+finalidadeLabel+'.\nPrazo: '+end.split('-').reverse().join('/')+'.\n\nAntes de responder, leia o aviso de finalidade e privacidade.\n\nAcesse seu link individual:\n'+lastLink+'\n\nNão compartilhe este link.';
+  el('previewText').textContent=textDraft;el('preview').classList.remove('hidden');
+  status('Link individual criado. Compartilhe-o somente com o participante.');
+  await refreshTracking();
+ }catch(e){status('Não foi possível gerar o link: '+e.message,true);}
+ finally{button.disabled=false;}
 });
-el('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(textDraft);status('Texto da prévia copiado. O envio real ainda não está habilitado.');}catch{status('Cópia indisponível neste navegador.',true);}});
-el('hide').addEventListener('click',()=>{textDraft='';el('previewText').textContent='';el('preview').classList.add('hidden');});
-el('draftForm').addEventListener('reset',()=>{textDraft='';el('previewText').textContent='';el('preview').classList.add('hidden');el('canal').value='email';refreshContact();});
-refreshContact();
-init();
+el('copy').addEventListener('click',async()=>{
+ if(!lastLink)return;try{await navigator.clipboard.writeText(textDraft);status('Mensagem copiada para compartilhamento individual.');}
+ catch{status('Não foi possível copiar a mensagem.',true);}
+});
+el('share').addEventListener('click',()=>{
+ if(!lastLink)return;
+ if(lastChannel==='whatsapp'){
+  const number='55'+lastContact;
+  window.open('https://wa.me/'+number+'?text='+encodeURIComponent(textDraft),'_blank','noopener,noreferrer');
+ }else{
+  const mailto='mailto:'+encodeURIComponent(lastContact)+'?subject='+encodeURIComponent('Convite MAP 360° — Sant’Anna 360')+'&body='+encodeURIComponent(textDraft);
+  location.href=mailto;
+ }
+});
+el('hide').addEventListener('click',hidePreview);
+el('draftForm').addEventListener('reset',()=>{hidePreview();el('canal').value='email';refreshContact();});
+refreshContact();init();
 </script></body></html>

@@ -10,7 +10,8 @@ main{max-width:1000px;margin:25px auto;padding:0 18px 50px}
 .card{background:white;padding:22px;border:1px solid var(--border);border-radius:12px;margin-bottom:16px}
 h1{margin:0;font-size:27px}h2{font-size:21px}h3{font-size:18px}
 .alert{background:#fff4df;padding:13px 15px;border-radius:8px}.error{background:#ffe7e4;color:#8a2424}.ok{background:#e4f6ea;color:#175536}
-label{display:block;font-weight:600;margin-bottom:6px}select{padding:11px;border:1px solid #bfcbd5;border-radius:9px;max-width:100%;width:480px;font:inherit}
+label{display:block;font-weight:600;margin-bottom:6px}
+#feedback label{flex:1;min-width:160px}#feedback input,#feedback textarea,#feedback select{width:100%;font:inherit;border-radius:8px;border:1px solid #bfcbd5;padding:9px}#feedback textarea{resize:vertical}select{padding:11px;border:1px solid #bfcbd5;border-radius:9px;max-width:100%;width:480px;font:inherit}
 button{background:var(--navy);color:white;border:0;border-radius:8px;padding:9px 15px;font:inherit;cursor:pointer}
 button:disabled{opacity:.45;cursor:not-allowed}
 table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--border);text-align:left;padding:10px;font-size:14px}
@@ -25,13 +26,16 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 .map-analytic-table th,.map-analytic-table td{padding:10px;border:1px solid #dde4eb;vertical-align:top}
 .map-analytic-table th{background:#edf2f6}
 #report p,#report li,#report td{text-align:justify;text-justify:inter-word;hyphens:auto;overflow-wrap:break-word}
+#feedbackPrint{background:white;padding:24px 26px;border:1px solid #dde4eb;border-radius:10px;margin-top:15px}
+#feedbackPrint p{white-space:pre-wrap;overflow-wrap:break-word}
 @media print{
- @page{size:A4;margin:16mm 14mm}
+ @page{size:A4;margin:11mm 12mm}
  header,.no-print,#summary{display:none!important}
  body{background:white}main{max-width:none;margin:0;padding:0}
  #report{display:block!important}
- .map-analytic-section{break-before:page;page-break-before:always;break-inside:auto;border:0;padding:0;margin:0}
- .map-analytic-section:first-of-type{break-before:auto;page-break-before:auto}
+ #feedbackPrint:not(.hidden){display:block!important;break-before:page;page-break-before:always;padding:0;margin:0;border:0;font-size:13px}
+ .map-analytic-section{break-before:auto;page-break-before:auto;break-inside:auto;border:0;padding:0;margin:0 0 10px}
+ .map-analytic-section p{font-size:13.5px;line-height:1.42;margin:4px 0 6px}.map-analytic-section h2{font-size:17px;margin:8px 0 3px}.map-analytic-section li{font-size:13.5px;margin:2px 0}.map-analytic-table td,.map-analytic-table th{padding:5px 7px;font-size:12.5px}
  .map-analytic-section h2{break-after:avoid;page-break-after:avoid}
  .map-analytic-table tr,.map-analytic-score{break-inside:avoid;page-break-inside:avoid}
  #report p,#report li,#report td{orphans:3;widows:3;text-align:justify}
@@ -50,24 +54,144 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--bo
 </div>
 <div class="actions"><button id="refresh" type="button">Atualizar</button><button id="logout" type="button">Sair</button></div>
 </section>
-<section id="summary" class="card hidden"><h2>Resultado consultado</h2><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button></section>
+<section id="summary" class="card hidden"><h2>Relatório completo para devolutiva</h2><p id="participantHeader"></p><p id="resultTitle"></p><p id="resultExplain"></p><button id="print" class="no-print" type="button">Imprimir relatório analítico / PDF</button><label class="no-print" style="font-weight:400;margin-top:12px"><input id="includePdi" type="checkbox"> Incluir no PDF a devolutiva e o PDI já registrados</label><p id="pdfFeedbackNote" class="no-print" style="font-size:13px;color:#637387">Os compromissos somente serão incluídos se tiverem sido salvos no sistema.</p></section>
 <div id="report" class="hidden"></div>
+<section id="feedbackPrint" class="hidden" aria-label="Devolutiva registrada para impressão"></section>
+<section id="feedback" class="card hidden no-print">
+<h2>Registro da devolutiva e acompanhamento do PDI</h2>
+<p>Registro administrativo vinculado exclusivamente à avaliação e à empresa selecionadas. A devolutiva deve ser discutida com o participante antes de registrar compromissos.</p>
+<p id="feedbackStatus" role="status" aria-live="polite" class="alert">Carregando devolutiva...</p>
+<form id="feedbackForm">
+<div class="actions">
+<label>Situação<select id="feedbackState"><option value="pendente">Pendente</option><option value="realizada">Devolutiva realizada</option><option value="acompanhamento">Em acompanhamento</option></select></label>
+<label>Data da devolutiva<input id="feedbackDate" type="date"></label>
+<label>Encerramento do acompanhamento<input id="feedbackClosed" type="date"></label>
+<label>Próxima revisão<input id="feedbackReview" type="date"></label>
+</div>
+<label>Responsável pela devolutiva<input id="feedbackOwner" type="text" maxlength="160" placeholder="Profissional responsável"></label>
+<label>Síntese da conversa<textarea id="feedbackNotes" maxlength="4000" rows="4" placeholder="Pontos discutidos, percepções e contexto profissional"></textarea></label>
+<label>Compromissos do PDI<textarea id="feedbackPdi" maxlength="4000" rows="4" placeholder="Ação pactuada, responsável, prazo e evidências de acompanhamento"></textarea></label>
+<p style="font-size:13px;color:#5d6876">Este registro não modifica as respostas do questionário nem o Relatório Analítico. A gravação requer autenticação e autorização no servidor.</p>
+<button id="feedbackSave" type="submit">Salvar devolutiva e PDI</button>
+</form></section>
 <p class="no-print" style="font-size:12px;color:#627387">Este módulo depende de autenticação Supabase e das políticas RLS já existentes. A página HTML não é uma barreira de acesso; os dados devem permanecer protegidos no banco.</p>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/s360-supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/dist/umd/supabase.js"></script>
 <script src="js/map360-motor-v1_3.js"></script>
 <script src="js/map360-relatorio-analitico-v1_6.js"></script>
 <script>
 'use strict';
 const byId=id=>document.getElementById(id);
-const client=window.supabase?.createClient('https://okvikkifrsbovbppywgp.supabase.co','sb_publishable_6IMZT1ApTHN8NZeifOLUQw_oGy6P2eC');
-let user=null,companies=[],evaluations=[],questions=[],activeId=null;
+const client=window.S360Supabase.origins.includes(location.origin) && window.supabase?.createClient(window.S360Supabase.url,window.S360Supabase.key);
+let user=null,companies=[],evaluations=[],questions=[],activeId=null,selectedAssessment=null,savedFeedback=null;
+const initialParams=new URLSearchParams(location.search);
+const requestedCompany=initialParams.get('empresa'),requestedEvaluation=initialParams.get('avaliacao');
+let initialOpened=false, companyRequest=0, resultRequest=0;
 function status(s,kind=''){const p=byId('status');p.textContent=s;p.className='alert '+kind;}
+
+const FEEDBACK_URL=window.S360Supabase.url + '/functions/v1/map360-convites';
+function feedbackStatus(text,error=false){
+ const p=byId('feedbackStatus');p.textContent=text;p.className='alert '+(error?'error':'ok');
+}
+async function feedbackRequest(action,payload){
+ const session=await client.auth.getSession(),token=session.data.session?.access_token;
+ if(!token)throw Error('Sua sessão expirou. Faça login novamente.');
+ const res=await fetch(FEEDBACK_URL,{method:'POST',mode:'cors',cache:'no-store',referrerPolicy:'no-referrer',
+ headers:{'Content-Type':'application/json','apikey':window.S360Supabase.key,'Authorization':'Bearer '+token},
+ body:JSON.stringify({action,...payload})});
+ const json=await res.json().catch(()=>({}));
+ if(!res.ok)throw Error(json.error||'Serviço de devolutivas indisponível.');
+ return json;
+}
+function dateOrNull(x){return x||null;}
+function syncFeedbackPrint(){
+ const area=byId('feedbackPrint');area.replaceChildren();
+ area.classList.add('hidden');
+ if(!byId('includePdi').checked||!savedFeedback||!selectedAssessment)return;
+ const heading=document.createElement('h2');heading.textContent='Registro de devolutiva e PDI — anexo reservado';area.append(heading);
+ const caption=document.createElement('p');
+ caption.textContent='Participante: '+(selectedAssessment.participante_nome||'Não informado')+' · Registro da avaliação: '+new Date(selectedAssessment.criado_em).toLocaleDateString('pt-BR');
+ area.append(caption);
+ const fields=[
+  ['Situação',savedFeedback.status],
+  ['Data da devolutiva',savedFeedback.realizado_em?new Date(savedFeedback.realizado_em+'T12:00:00').toLocaleDateString('pt-BR'):'Não registrada'],
+  ['Responsável',savedFeedback.responsavel||'Não informado'],
+  ['Síntese da conversa',savedFeedback.sintese||'Sem síntese registrada'],
+  ['Compromissos acordados no PDI',savedFeedback.compromissos||'Nenhum compromisso registrado'],
+  ['Encerramento do acompanhamento',savedFeedback.encerrado_em?new Date(savedFeedback.encerrado_em+'T12:00:00').toLocaleDateString('pt-BR'):'Em aberto'],
+  ['Próxima revisão',savedFeedback.proxima_revisao?new Date(savedFeedback.proxima_revisao+'T12:00:00').toLocaleDateString('pt-BR'):'A definir']
+ ];
+ for(const [label,value] of fields){
+  const h=document.createElement('h3');h.textContent=label;area.append(h);
+  const p=document.createElement('p');p.textContent=value;area.append(p);
+ }
+ const warning=document.createElement('p');
+ warning.textContent='Anexo administrativo confidencial. Este instrumento é exploratório e a devolutiva exige contextualização profissional e revisão humana.';
+ area.append(warning);
+ area.classList.remove('hidden');
+}
+byId('includePdi').addEventListener('change',syncFeedbackPrint);
+
+async function loadFeedback(id,empresa){
+ byId('feedback').classList.remove('hidden');
+ savedFeedback=null;syncFeedbackPrint();
+ byId('feedbackForm').reset();
+ byId('feedbackForm').querySelectorAll('input,textarea,select,button').forEach(e=>e.disabled=true);
+ feedbackStatus('Consultando registro da devolutiva...');
+ try{
+  const data=await feedbackRequest('get_feedback',{empresa_id:empresa,avaliacao_id:id});
+  if(!selectedAssessment||selectedAssessment.id!==id||activeId!==empresa)return;
+  const d=data.devolutiva;
+  savedFeedback=d||null;syncFeedbackPrint();
+  if(d){
+   byId('feedbackState').value=d.status||'pendente';
+   byId('feedbackDate').value=d.realizado_em||'';
+   byId('feedbackReview').value=d.proxima_revisao||'';
+   byId('feedbackClosed').value=d.encerrado_em||'';
+   byId('feedbackOwner').value=d.responsavel||'';
+   byId('feedbackNotes').value=d.sintese||'';
+   byId('feedbackPdi').value=d.compromissos||'';
+   feedbackStatus('Registro recuperado. Última atualização: '+new Date(d.atualizado_em).toLocaleString('pt-BR')+'.');
+  }else{feedbackStatus('Nenhuma devolutiva registrada. Você pode iniciar o acompanhamento.');}
+  byId('feedbackForm').querySelectorAll('input,textarea,select,button').forEach(e=>e.disabled=false);
+ }catch(e){feedbackStatus('Registro indisponível: '+e.message,true);}
+}
+byId('feedbackForm').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const current=selectedAssessment;
+ if(!current||activeId!==current.empresa_id)return;
+ const statusValue=byId('feedbackState').value,date=byId('feedbackDate').value,review=byId('feedbackReview').value,closed=byId('feedbackClosed').value;
+ if(closed&&(statusValue!=='realizada'||!date||closed<date)){feedbackStatus('Para encerrar o acompanhamento, registre a devolutiva realizada e informe uma data de encerramento igual ou posterior. ',true);return;}
+ if(statusValue!=='pendente'&&!date){feedbackStatus('Informe a data da devolutiva para marcar como realizada ou em acompanhamento.',true);return;}
+ if(date&&review&&review<date){feedbackStatus('A próxima revisão não pode ser anterior à devolutiva.',true);return;}
+ if(!confirm('Salvar o registro da devolutiva e os compromissos do PDI para este participante?'))return;
+ const submit=byId('feedbackSave');submit.disabled=true;
+ feedbackStatus('Salvando registro...');
+ try{
+  const d=await feedbackRequest('save_feedback',{
+    empresa_id:current.empresa_id,avaliacao_id:current.id,status:statusValue,
+    realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),encerrado_em:dateOrNull(closed),
+    responsavel:byId('feedbackOwner').value.trim(),sintese:byId('feedbackNotes').value.trim(),
+    compromissos:byId('feedbackPdi').value.trim()
+  });
+  if(selectedAssessment?.id!==current.id||activeId!==current.empresa_id)return;
+  savedFeedback={
+    status:statusValue,realizado_em:dateOrNull(date),proxima_revisao:dateOrNull(review),encerrado_em:dateOrNull(closed),
+    responsavel:byId('feedbackOwner').value.trim(),sintese:byId('feedbackNotes').value.trim(),
+    compromissos:byId('feedbackPdi').value.trim(),atualizado_em:d.atualizado_em
+  };
+  syncFeedbackPrint();
+  feedbackStatus('Devolutiva e PDI registrados. Atualizado em '+new Date(d.atualizado_em).toLocaleString('pt-BR')+'.');
+ }catch(e){feedbackStatus('Falha ao salvar: '+e.message,true);}
+ finally{submit.disabled=false;}
+});
+
 function clear(n){n.replaceChildren();}
 function cell(value){const e=document.createElement('td');e.textContent=value===null||value===undefined?'—':String(value);return e;}
 function validUuid(s){return typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);}
 async function init(){
- byId('app').classList.add('hidden');byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ byId('app').classList.add('hidden');byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');byId('includePdi').checked=false;savedFeedback=null;syncFeedbackPrint();selectedAssessment=null;
  if(!client||!window.MAP360Motor||!window.MAP360Analitico){document.body.classList.add('ready');status('Falha ao carregar componentes do sistema.','error');return;}
  try{
   const {data,error}=await client.auth.getUser();
@@ -96,17 +220,21 @@ async function init(){
   }
   if(questions.length!==32||codes.size!==32)throw Error('É necessário haver exatamente 32 perguntas ativas.');
   byId('app').classList.remove('hidden');
+  if(validUuid(requestedCompany)&&companies.some(c=>c.id===requestedCompany))byId('empresa').value=requestedCompany;
   await loadCompany();
  }catch(e){document.body.classList.add('ready');status('Consulta indisponível: '+e.message,'error');}
 }
 async function loadCompany(){
+ const request=++companyRequest;
+ ++resultRequest;
  const id=byId('empresa').value;
- byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
  if(!companies.some(c=>c.id===id)){status('Empresa não autorizada.','error');return;}
  activeId=id;status('Buscando avaliações autorizadas...');
  const {data,error}=await client.from('map_avaliacoes')
    .select('id,empresa_id,colaborador_id,participante_nome,finalidade,consentimento_registrado,criado_em')
    .eq('empresa_id',id).order('criado_em',{ascending:false}).limit(100);
+ if(request!==companyRequest)return;
  if(error){status('Erro ao consultar avaliações: '+error.message,'error');return;}
  evaluations=data||[];
  clear(byId('avaliacoes'));byId('totals').textContent='Avaliações visíveis: '+evaluations.length+' (limite da listagem: 100).';
@@ -118,19 +246,28 @@ async function loadCompany(){
   button.onclick=()=>loadResult(ev.id,id);td.append(button);tr.append(td);byId('avaliacoes').append(tr);
  }
  status('Avaliações carregadas em modo de consulta.','ok');
+ if(!initialOpened&&validUuid(requestedEvaluation)&&id===requestedCompany){
+  initialOpened=true;
+  await loadResult(requestedEvaluation,id);
+ }
 }
 async function loadResult(assessmentId,companyId){
  if(companyId!==activeId||!validUuid(assessmentId)||!validUuid(companyId))return;
- const selected=evaluations.find(e=>e.id===assessmentId&&e.empresa_id===companyId);
- if(!selected){status('Avaliação não autorizada.','error');return;}
- if(!selected.consentimento_registrado){status('Avaliação sem registro de consentimento nesta tabela. Relatório não exibido nesta etapa.','error');return;}
- byId('summary').classList.add('hidden');byId('report').classList.add('hidden');
+ const request=++resultRequest;
+ byId('summary').classList.add('hidden');byId('report').classList.add('hidden');byId('feedback').classList.add('hidden');selectedAssessment=null;
  status('Conferindo respostas da avaliação...');
  try{
+  const assessment=await client.from('map_avaliacoes')
+    .select('id,empresa_id,participante_nome,finalidade,consentimento_registrado,criado_em')
+    .eq('id',assessmentId).eq('empresa_id',companyId).maybeSingle();
+  if(request!==resultRequest)return;
+  if(assessment.error||!assessment.data){status('Avaliação não autorizada ou indisponível.','error');return;}
+  const selected=assessment.data;
+  if(!selected.consentimento_registrado){status('Avaliação sem registro de consentimento.','error');return;}
   const {data,error}=await client.from('map_respostas').select('avaliacao_id,empresa_id,pergunta_id,nota')
       .eq('empresa_id',companyId).eq('avaliacao_id',assessmentId).limit(100);
+  if(request!==resultRequest)return;
   if(error)throw error;
-  if(companyId!==activeId)return; // Ignora respostas de outra seleção após troca rápida de empresa.
   const rows=data||[];
   const lookup=new Map(questions.map(q=>[q.id,q.codigo]));
   const respostas={};
@@ -145,15 +282,21 @@ async function loadResult(assessmentId,companyId){
   }
   const resultado=window.MAP360Motor.calcular(respostas);
   window.MAP360Analitico.render(byId('report'),{calculo:resultado,respostas});
+  const details=document.createElement('p');details.className='map-analytic-kicker';
+  details.textContent='Participante: '+(selected.participante_nome||'Não informado')+' · Finalidade: '+(selected.finalidade||'—')+' · Registro: '+new Date(selected.criado_em).toLocaleDateString('pt-BR')+' · Documento experimental para devolutiva orientada.';
+  byId('report').prepend(details);
+  byId('participantHeader').textContent='Participante: '+(selected.participante_nome||'Não informado')+' · Empresa: '+(companies.find(c=>c.id===companyId)?.nome_fantasia||companies.find(c=>c.id===companyId)?.razao_social||'Empresa autorizada');
   byId('resultTitle').textContent=resultado.titulo;
   byId('resultExplain').textContent='Relatório experimental recuperado de uma avaliação autorizada. O resultado não foi salvo novamente e não representa diagnóstico psicológico ou critério automático para decisões seletivas.';
   byId('summary').classList.remove('hidden');byId('report').classList.remove('hidden');
-  status('Relatório consultado com sucesso. Nenhum dado foi alterado.','ok');
- }catch(e){status('Não foi possível gerar o relatório: '+e.message,'error');}
+  selectedAssessment=selected;
+  status('Relatório consultado com sucesso. Nenhuma resposta foi alterada.','ok');
+  await loadFeedback(assessmentId,companyId);
+ }catch(e){if(request===resultRequest)status('Não foi possível gerar o relatório: '+e.message,'error');}
 }
 byId('empresa').addEventListener('change',loadCompany);
 byId('refresh').addEventListener('click',init);
-byId('print').addEventListener('click',()=>window.print());
+byId('print').addEventListener('click',()=>{syncFeedbackPrint();window.print();});
 byId('logout').addEventListener('click',async()=>{if(client)await client.auth.signOut();location.replace('login.html');});
 init();
 </script></body></html>
