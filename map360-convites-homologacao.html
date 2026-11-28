@@ -30,15 +30,16 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f8;padding:14px;
 <label>Nome do participante<input id="nome" placeholder="Participante Teste" maxlength="80" required autocomplete="off"></label>
 <label>Finalidade da avaliação<select id="finalidade" required><option value="desenvolvimento">Desenvolvimento profissional</option><option value="autoconhecimento">Autoconhecimento</option><option value="formacao">Ação formativa</option></select></label>
 <label>Prazo pretendido para resposta<input id="prazo" type="date" required></label>
-<label>Canal preferido para eventual envio<select id="canal"><option value="email">E-mail individual</option><option value="whatsapp">WhatsApp individual</option></select></label>
+<label>Canal preferido para eventual envio<select id="canal"><option value="email">E-mail individual pelo Zoho Mail</option><option value="whatsapp">WhatsApp individual</option></select></label>
 <label id="emailField">E-mail do participante<input id="email" type="email" placeholder="teste@exemplo.com" maxlength="254" autocomplete="off" inputmode="email"></label>
 <label id="phoneField" class="hidden">WhatsApp do participante (com DDD)<input id="phone" type="tel" placeholder="(27) 99999-9999" maxlength="20" autocomplete="off" inputmode="tel"></label>
-<p class="small">Depois de ativado o backend, o convite será registrado na empresa selecionada. O envio por WhatsApp abre uma conversa com a mensagem pronta; o envio por e-mail abrirá o aplicativo de e-mail do administrador. Nenhum disparo é automático.</p>
+<p class="small">O convite fica registrado na empresa selecionada. No WhatsApp, a mensagem abre pronta para revisão. Para e-mail, abra o Zoho Mail e use os dados da prévia para montar a mensagem.</p>
 <div class="actions"><button type="submit">Gerar link individual</button><button type="reset" class="secondary">Limpar campos</button></div>
 </form>
 </section>
 <section class="card hidden" id="preview">
 <h2>Convite individual gerado</h2>
+<p id="emailDetails" class="hidden"><strong>Para</strong> <span id="previewRecipient"></span><br><strong>Assunto</strong> Convite MAP 360° — Sant’Anna 360</p>
 <pre id="previewText"></pre>
 <p class="warning"><strong>Uso individual:</strong> o link é exclusivo, expira no prazo indicado e deixa de funcionar após o envio das respostas. Compartilhe somente com o destinatário.</p>
 <div class="actions no-print"><button id="copy" type="button">Copiar texto do convite</button><button id="share" type="button">Abrir canal de envio</button><button id="hide" class="secondary" type="button">Fechar prévia</button></div>
@@ -179,7 +180,11 @@ el('draftForm').addEventListener('submit',async event=>{
   const companyName=company.nome_fantasia||company.razao_social||'Empresa';
   lastLink=json.link;lastChannel=channel;lastContact=contact;
   textDraft='Olá, '+name+'!\n\nVocê recebeu um convite da '+companyName+' para responder ao MAP 360° da Sant’Anna 360, um instrumento experimental de preferências comportamentais com 32 afirmações.\nFinalidade: '+finalidadeLabel+'.\nPrazo: '+end.split('-').reverse().join('/')+'.\n\nAntes de responder, leia o aviso de finalidade e privacidade.\n\nAcesse seu link individual:\n'+lastLink+'\n\nNão compartilhe este link.';
-  el('previewText').textContent=textDraft;el('preview').classList.remove('hidden');
+  el('previewText').textContent=textDraft;
+  el('previewRecipient').textContent=channel==='email'?contact:'';
+  el('emailDetails').classList.toggle('hidden',channel!=='email');
+  el('share').textContent=channel==='email'?'Abrir Zoho Mail':'Abrir WhatsApp';
+  el('preview').classList.remove('hidden');
   status('Link individual criado. Compartilhe-o somente com o participante.');
   await refreshTracking();
  }catch(e){status('Não foi possível gerar o link: '+e.message,true);}
@@ -195,8 +200,7 @@ el('share').addEventListener('click',()=>{
   const number='55'+lastContact;
   window.open('https://wa.me/'+number+'?text='+encodeURIComponent(textDraft),'_blank','noopener,noreferrer');
  }else{
-  const mailto='mailto:'+encodeURIComponent(lastContact)+'?subject='+encodeURIComponent('Convite MAP 360° — Sant’Anna 360')+'&body='+encodeURIComponent(textDraft);
-  location.href=mailto;
+  window.open('https://mail.zoho.com/zm/#compose','_blank','noopener,noreferrer');
  }
 });
 el('hide').addEventListener('click',hidePreview);

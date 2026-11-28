@@ -8,7 +8,7 @@ for(const [name,html] of [['admin',admin],['participant',participant]]){
  const js=html.match(/<script>([\s\S]*?)<\/script>/);assert(js,name+' script ausente');new vm.Script(js[1]);
 }
 assert(admin.includes("action:'create'")&&admin.includes("'Authorization':'Bearer '"),'Gerar exige JWT');
-assert(admin.includes('wa.me/')&&admin.includes('mailto:'),'Compartilhamento manual');
+assert(admin.includes('wa.me/')&&admin.includes('https://mail.zoho.com/zm/#compose')&&admin.includes('previewRecipient'),'Compartilhamento manual');
 assert(!admin.includes('[LINK INDIVIDUAL AINDA NÃO IMPLEMENTADO]'),'Placeholder removido');
 assert(participant.includes('history.replaceState'),'Token removido da URL visível');
 assert(participant.includes("action,token,...data"),'Participante envia token');
