@@ -43,4 +43,7 @@ assert(!restricted.includes('SUPABASE_SERVICE_ROLE_KEY'),'Sem credenciais secret
 assert(admin.includes('id="trackingTotals"')&&admin.includes('Aguardando devolutiva:'),'Indicadores do painel de convites');
 assert(admin.includes('<th>Devolutiva</th>')&&admin.includes('devolutiva_status'),'Coluna de devolutiva');
 assert(fn.includes('devolutiva_status:')&&fn.includes('.eq("empresa_id",body.empresa_id).in("avaliacao_id",ids)'),'Status do PDI deve filtrar empresa');
+assert(restricted.includes('id="includePdi"')&&restricted.includes('id="feedbackPrint"'),'Opção de anexar PDI ao relatório');
+assert(restricted.includes('if(!byId(\'includePdi\').checked||!savedFeedback'),'Anexo exige seleção e dados salvos');
+assert(restricted.includes('savedFeedback=d||null;syncFeedbackPrint()'),'Anexo usa registro recuperado no servidor');
 console.log('MAP 360° v1.9: verificações estáticas de convites, relatórios, devolutivas e PDI aprovadas.');
